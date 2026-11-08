@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate stable tag, version and release notes
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v7.0.1
+
+      - name: Validate release contract
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python3 scripts/release.py validate --tag "$RELEASE_TAG"
+
+  checks:
+    name: Verify exact tagged source
+    needs: validate
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    name: Package and publish GitHub Release
+    needs: checks
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Check out tagged source and notes
+        uses: actions/checkout@v7.0.1
+
+      - name: Download verified distributions
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: kttp-distributions
+          path: build/ci-distributions
+
+      - name: Download built documentation
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: kttp-docs-site
+          path: docs/design/site
+
+      - name: Assemble versioned assets and checksums
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python3 scripts/release.py assemble --tag "$RELEASE_TAG" \
+            --distribution-dir build/ci-distributions \
+            --site-dir docs/design/site --output release-assets
+          cd release-assets
+          sha256sum --check --strict SHA256SUMS
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v3.0.3
+        with:
+          name: Kttp ${{ github.ref_name }}
+          body_path: docs/releases/${{ github.ref_name }}.md
+          files: release-assets/*
+          fail_on_unmatched_files: true
+          generate_release_notes: false
+          draft: false
+          prerelease: false
+
+  deploy-site:
+    name: Deploy released documentation
+    needs: publish
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/docs-pages.yml
+    with:
+      release_tag: ${{ github.ref_name }}

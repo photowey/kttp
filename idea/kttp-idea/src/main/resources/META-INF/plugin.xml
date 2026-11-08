@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<idea-plugin>
+    <id>io.github.photowey.kttp</id>
+    <name>Kttp</name>
+    <version>1.0.0-SNAPSHOT</version>
+    <vendor url="https://photowey.github.io">io.github.photowey</vendor>
+
+    <description
+    ><![CDATA[
+        Kotlin DSL HTTP Client for IntelliJ IDEA.<br>
+        Core: <b>.kttp.kts</b> files as Kotlin Script under <b>Scratches and Consoles → Kttp</b>.
+        Write GET/POST/... requests as Kotlin DSL, run them in the IDE.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.modules.json</depends>
+    <depends>org.jetbrains.kotlin</depends>
+    <depends optional="true" config-file="spring-kttp-optional.xml">com.intellij.spring</depends>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK2="true"/>
+        <scriptAdditionalIdeaDependenciesProvider
+                order="first"
+                implementation="io.github.photowey.kttp.idea.script.KttpScriptAdditionalIdeaDependenciesProvider"
+        />
+        <scriptDefinitionsProvider
+                implementation="io.github.photowey.kttp.idea.script.KttpScriptDefinitionsProvider"
+                order="first"
+        />
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService
+                serviceInterface="io.github.photowey.kttp.idea.script.KttpArtifactsProvider"
+                serviceImplementation="io.github.photowey.kttp.idea.script.KttpArtifactsProviderImpl"
+        />
+        <projectService
+                serviceImplementation="io.github.photowey.kttp.idea.env.KttpEnvironmentService"
+        />
+        <toolWindow
+                id="Kttp"
+                anchor="right"
+                icon="io.github.photowey.kttp.idea.icons.KttpIcons.ToolWindow"
+                factoryClass="io.github.photowey.kttp.idea.KttpToolWindowFactory"
+        />
+        <iconMapper mappingFile="KttpIconMappings.json"/>
+        <fileType
+                name="Kttp Script"
+                implementationClass="io.github.photowey.kttp.idea.lang.KttpFileType"
+                language="Kttp"
+                patterns="*.kttp.kts"
+        />
+        <fileType
+                name="Kttp Environment"
+                implementationClass="io.github.photowey.kttp.idea.env.KttpEnvFileType"
+                language="JSON"
+                patterns="*.kttp.env.json"
+        />
+        <iconProvider
+                implementation="io.github.photowey.kttp.idea.icons.KttpIconProvider"
+                order="first"
+        />
+        <completion.contributor
+                language="Kotlin"
+                implementationClass="io.github.photowey.kttp.idea.completion.KttpCompletionContributor"
+        />
+        <!-- .kttp.kts 由 LanguageSubstitutor 按 Kotlin 解析，使用 Kotlin 自带语法高亮，无需 Kttp 自定义高亮 -->
+        <lang.substitutor
+                language="Kttp"
+                implementationClass="io.github.photowey.kttp.idea.lang.KttpLanguageSubstitutor"
+        />
+        <scratch.rootType
+                implementation="io.github.photowey.kttp.idea.scratch.KttpScriptScratchRootType"
+        />
+        <configurationType
+                implementation="io.github.photowey.kttp.idea.run.KttpRunConfigurationType"
+        />
+        <runConfigurationProducer
+                implementation="io.github.photowey.kttp.idea.run.KttpRunConfigurationProducer"
+        />
+        <programRunner
+                implementation="io.github.photowey.kttp.idea.run.KttpRunner"
+        />
+        <!-- Run icon in gutter for GET/POST/... lines. -->
+        <runLineMarkerContributor
+                language="kotlin"
+                implementationClass="io.github.photowey.kttp.idea.run.KttpRunLineMarkerContributor"
+        />
+        <localInspection
+                language="Kotlin"
+                shortName="KttpScriptNoRequest"
+                displayName="Kttp: No executable request"
+                groupPath="Kotlin"
+                groupName="Kttp"
+                implementationClass="io.github.photowey.kttp.idea.inspection.KttpScriptInspection"
+                enabledByDefault="true"
+                level="WEAK WARNING"
+        />
+        <localInspection
+                language="Kotlin"
+                shortName="KttpEnvVariable"
+                displayName="Kttp: Environment variable might not be set"
+                groupPath="Kotlin"
+                groupName="Kttp"
+                implementationClass="io.github.photowey.kttp.idea.inspection.EnvVariableInspection"
+                enabledByDefault="true"
+                level="WEAK WARNING"
+        />
+        <localInspection
+                language="Kotlin"
+                shortName="KttpLocalFile"
+                displayName="Kttp: Local file does not exist"
+                groupPath="Kotlin"
+                groupName="Kttp"
+                implementationClass="io.github.photowey.kttp.idea.inspection.LocalFileInspection"
+                enabledByDefault="true"
+                level="WEAK WARNING"
+        />
+        <lang.documentationProvider
+                language="Kotlin"
+                implementationClass="io.github.photowey.kttp.idea.documentation.KttpDocumentationProvider"
+        />
+        <!-- Ctrl+Click on localFile("path") opens the referenced file (Kotlin + Kttp so .kttp.kts gets link) -->
+        <psi.referenceContributor
+                language="Kotlin"
+                implementationClass="io.github.photowey.kttp.idea.references.KttpLocalFileReferenceContributor"
+        />
+        <psi.referenceContributor
+                language="Kttp"
+                implementationClass="io.github.photowey.kttp.idea.references.KttpLocalFileReferenceContributor"
+        />
+        <!-- Editor toolbar for Kttp files -->
+        <editorNotificationProvider
+                implementation="io.github.photowey.kttp.idea.toolbar.KttpEditorNotificationPanelProvider"
+        />
+        <editorNotificationProvider
+                implementation="io.github.photowey.kttp.idea.notifications.KttpEditorNotificationProvider"
+        />
+        <lang.psiStructureViewFactory
+                language="Kttp"
+                implementationClass="io.github.photowey.kttp.idea.structure.KttpStructureViewExtension"
+        />
+        <defaultLiveTemplates file="templates/Kttp.xml"/>
+        <consoleFilterProvider
+                implementation="io.github.photowey.kttp.idea.run.KttpConsoleFilterProvider"
+                order="first"
+        />
+        <projectViewNodeDecorator
+                implementation="io.github.photowey.kttp.idea.script.KttpNodeDecorator"
+        />
+        <internalFileTemplate name="io.github.photowey.kttp.script.Kttp.kttp"/>
+    </extensions>
+
+    <!-- Actions -->
+    <actions>
+        <action
+                id="io.github.photowey.kttp.ExecuteRequest"
+                class="io.github.photowey.kttp.idea.actions.ExecuteRequestAction"
+                text="Execute Kttp Request"
+                description="Execute the current kttp request"
+        >
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt K"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+        <!-- Run File: execute entire .kttp.kts script (toolbar and Run menu) -->
+        <action
+                id="kttp.run.file"
+                class="io.github.photowey.kttp.idea.toolbar.RunKttpFileAction"
+                text="Run All Requests"
+                description="Run all requests in the current .kttp.kts file"
+                icon="AllIcons.Actions.RunAll"
+        >
+            <add-to-group group-id="RunMenu" anchor="last"/>
+        </action>
+        <action
+                id="io.github.photowey.kttp.NewKttpScript"
+                class="io.github.photowey.kttp.idea.actions.NewKttpScriptAction"
+                text="Kttp Script"
+                description="Create a new Kttp script in Scratches and Consoles → Consoles → Kttp"
+        >
+            <add-to-group
+                    group-id="NewGroup"
+                    anchor="after"
+                    relative-to-action="Kotlin.NewScript"
+            />
+        </action>
+        <!-- Add Request: insert GET/POST/... at caret -->
+        <action
+                id="kttp.get.request"
+                class="io.github.photowey.kttp.idea.actions.AddGetRequestAction"
+                text="GET"
+                description="Insert GET request"
+        />
+        <action
+                id="kttp.post.request"
+                class="io.github.photowey.kttp.idea.actions.AddPostRequestAction"
+                text="POST"
+                description="Insert POST request"
+        />
+        <action
+                id="kttp.put.request"
+                class="io.github.photowey.kttp.idea.actions.AddPutRequestAction"
+                text="PUT"
+                description="Insert PUT request"
+        />
+        <action
+                id="kttp.delete.request"
+                class="io.github.photowey.kttp.idea.actions.AddDeleteRequestAction"
+                text="DELETE"
+                description="Insert DELETE request"
+        />
+        <action
+                id="kttp.patch.request"
+                class="io.github.photowey.kttp.idea.actions.AddPatchRequestAction"
+                text="PATCH"
+                description="Insert PATCH request"
+        />
+        <action
+                id="kttp.head.request"
+                class="io.github.photowey.kttp.idea.actions.AddHeadRequestAction"
+                text="HEAD"
+                description="Insert HEAD request"
+        />
+        <action
+                id="kttp.options.request"
+                class="io.github.photowey.kttp.idea.actions.AddOptionsRequestAction"
+                text="OPTIONS"
+                description="Insert OPTIONS request"
+        />
+        <action
+                id="kttp.custom.request"
+                class="io.github.photowey.kttp.idea.actions.AddCustomRequestAction"
+                text="Custom request"
+                description="Insert custom HTTP method"
+        />
+        <group
+                id="kttp.addRequest.group"
+                text="Add Request"
+                popup="true"
+                icon="AllIcons.General.Add"
+        >
+            <add-to-group
+                    group-id="EditorPopupMenu"
+                    anchor="before"
+                    relative-to-action="io.github.photowey.kttp.ExecuteRequest"
+            />
+            <reference ref="kttp.get.request"/>
+            <separator/>
+            <reference ref="kttp.post.request"/>
+            <reference ref="kttp.put.request"/>
+            <reference ref="kttp.delete.request"/>
+            <reference ref="kttp.patch.request"/>
+            <reference ref="kttp.head.request"/>
+            <reference ref="kttp.options.request"/>
+            <separator/>
+            <reference ref="kttp.custom.request"/>
+        </group>
+        <group id="kttp.generate.group">
+            <add-to-group group-id="GenerateGroup" anchor="last"/>
+            <reference ref="kttp.get.request"/>
+            <reference ref="kttp.post.request"/>
+            <reference ref="kttp.put.request"/>
+            <reference ref="kttp.delete.request"/>
+            <reference ref="kttp.patch.request"/>
+            <reference ref="kttp.head.request"/>
+            <reference ref="kttp.options.request"/>
+            <reference ref="kttp.custom.request"/>
+        </group>
+        <!-- Copy as cURL action -->
+        <action
+                id="kttp.copyAsCurl"
+                class="io.github.photowey.kttp.idea.actions.CopyAsCurlAction"
+                text="Copy as cURL"
+                description="Copy request as cURL command"
+                icon="AllIcons.Actions.Copy"
+        />
+        <!-- Import Requests actions -->
+        <action
+                id="kttp.ImportHttpFile"
+                class="io.github.photowey.kttp.idea.imports.ImportHttpFileAction"
+                text="Import HTTP File"
+                description="Import .http file as Kttp script"
+                icon="AllIcons.Actions.Download"
+        />
+        <action
+                id="kttp.ImportPostmanCollection"
+                class="io.github.photowey.kttp.idea.imports.ImportPostmanCollectionAction"
+                text="Import Postman Collection"
+                description="Import Postman collection as Kttp script"
+                icon="AllIcons.Actions.Download"
+        />
+    </actions>
+</idea-plugin>

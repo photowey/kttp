@@ -1,0 +1,131 @@
+site_name: Kttp Guide
+site_description: Kotlin HTTP scripting, CLI execution and IntelliJ IDEA integration
+site_url: !ENV [KTTP_DOCS_SITE_URL, "https://photowey.github.io/kttp/"]
+site_author: The Kttp Authors
+repo_name: photowey/kttp
+repo_url: https://github.com/photowey/kttp
+copyright: Copyright &copy; 2026 - present The Kttp Authors
+
+validation:
+  links:
+    anchors: warn
+
+theme:
+  name: material
+  language: en
+  font: false
+  logo: assets/images/kttp.svg
+  favicon: assets/images/kttp.svg
+  features:
+    - content.code.copy
+    - navigation.footer
+    - navigation.indexes
+    - navigation.sections
+    - navigation.tabs
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: deep orange
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: deep orange
+      toggle:
+        icon: material/toggle-switch-off
+        name: Switch to light mode
+
+plugins:
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: false
+      reconfigure_material: true
+      # Keep the browser search on the bundled English stemmer; Han boundaries below index Chinese text.
+      # Automatic zh rewriting selects a Lunr worker that expects an unavailable browser Jieba tokenizer.
+      reconfigure_search: false
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: zh
+          name: 简体中文
+          build: true
+          site_name: Kttp 使用手册
+          site_description: Kotlin HTTP 脚本、命令行与 IntelliJ IDEA 插件使用指南
+          nav:
+            - 概览: index.md
+            - 开始使用:
+                - 快速开始: quick-start.md
+                - Kotlin 脚本: scripting.md
+            - 使用指南:
+                - GUI 与脚本联动: gui.md
+                - CLI 参考: cli.md
+                - Agent Skill: agent-skills.md
+            - 项目维护:
+                - 架构与数据流: architecture.md
+                - 开发与发布: development.md
+          theme:
+            language: zh
+            palette:
+              - media: "(prefers-color-scheme: light)"
+                scheme: default
+                primary: deep purple
+                accent: deep orange
+                toggle:
+                  icon: material/toggle-switch
+                  name: 切换到深色模式
+              - media: "(prefers-color-scheme: dark)"
+                scheme: slate
+                primary: deep purple
+                accent: deep orange
+                toggle:
+                  icon: material/toggle-switch-off
+                  name: 切换到浅色模式
+  - search:
+      lang: en
+      separator: '[\s\-]+|(?=[\u4e00-\u9fff])|(?<=[\u4e00-\u9fff])'
+  - minify:
+      minify_html: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+extra_css:
+  - assets/stylesheets/kotlin.css
+
+extra:
+  generator: false
+
+nav:
+  - Overview: index.md
+  - Getting Started:
+      - Quick Start: quick-start.md
+      - Kotlin Scripting: scripting.md
+  - User Guide:
+      - GUI and Script Linkage: gui.md
+      - CLI Reference: cli.md
+      - Agent Skill: agent-skills.md
+  - Project:
+      - Architecture and Data Flow: architecture.md
+      - Development and Releases: development.md

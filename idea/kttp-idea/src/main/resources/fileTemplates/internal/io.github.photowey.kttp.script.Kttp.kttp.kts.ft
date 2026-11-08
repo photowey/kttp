@@ -1,0 +1,184 @@
+// Kttp HTTP Request Script Examples
+// This template demonstrates various request patterns and assertion styles
+
+// ============================================================================
+// Basic GET request with then block
+// ============================================================================
+GET("https://httpbin.org/get") {
+    header("Content-Type", "application/json")
+    query("key", "value")
+}.then {
+    val url: String = decode("$.url")
+    val response = getResponse()
+    assertStatus(200)
+    assertThat(url).isEqualTo("https://httpbin.org/get?key=value")
+    assertThat(response.code).isEqualTo(200)
+}
+
+// ============================================================================
+// POST request with JSON body and then block
+// ============================================================================
+val jsonBody = """
+    {"greeting": "Hello World!"}
+""".trimIndent()
+
+POST("https://httpbin.org/post") {
+    header("Content-Type", "application/json")
+    query("key", "value")
+    body(jsonBody)
+}.then {
+    assertStatus(200)
+    val greeting: String = decode("$.json.greeting")
+    assertThat(greeting).isEqualTo("Hello World!")
+}
+
+// ============================================================================
+// Using environment variables
+// ============================================================================
+val baseUrl: String by env
+val apiKey: String by env
+
+GET("$baseUrl/get") {
+    header("Authorization", "Bearer $apiKey")
+    query("page", "1")
+    query("limit", "10")
+}.then {
+    assertStatus(200)
+    val args: Map<String, Any> = decode("$.args")
+    assertTrue(args.isNotEmpty())
+}
+
+// ============================================================================
+// Using localFile to load request body
+// ============================================================================
+val requestBody: String by localFile("request.json")
+
+POST("https://httpbin.org/post") {
+    header("Content-Type", "application/json")
+    body(requestBody)
+}.then {
+    assertStatus(200)
+    val data: String = decode("$.data")
+}
+
+// ============================================================================
+// Advanced then block with JsonPath
+// ============================================================================
+GET("https://httpbin.org/json") {
+    header("Accept", "application/json")
+}.then {
+    assertStatus(200)
+
+    // Using decode for type-safe extraction
+    val slideshow: Map<String, Any> = decode("$.slideshow")
+
+    // Using jsonPath() for multiple extractions
+    val title: String = jsonPath().readString("$.slideshow.title")
+    val author: String = jsonPath().readString("$.slideshow.author")
+    val slides: List<Map<String, Any>> = jsonPath().readList("$.slideshow.slides")
+
+    // Assertions using kotlin.test
+    assertTrue(title.isNotEmpty())
+    assertNotNull(author)
+
+    // Assertions using AssertJ
+    assertThat(slides).isNotEmpty()
+    assertThat(getResponse().headers["Content-Type"]).contains("application/json")
+}
+
+// ============================================================================
+// PUT request with then block
+// ============================================================================
+val updateData = """
+    {"name": "Updated Name", "status": "active"}
+""".trimIndent()
+
+PUT("https://httpbin.org/put") {
+    header("Content-Type", "application/json")
+    body(updateData)
+}.then {
+    assertStatus(200)
+    val name: String = decode("$.json.name")
+    assertThat(name).isEqualTo("Updated Name")
+}
+
+// ============================================================================
+// DELETE request with then block
+// ============================================================================
+DELETE("https://httpbin.org/delete") {
+    header("Authorization", "Bearer token123")
+}.then {
+    assertStatus(200)
+    assertThat(getResponse().code).isEqualTo(200)
+}
+
+// ============================================================================
+// PATCH request with then block
+// ============================================================================
+PATCH("https://httpbin.org/patch") {
+    header("Content-Type", "application/json")
+    body("""{"status": "updated"}""")
+}.then {
+    assertStatus(200)
+    val status: String = decode("$.json.status")
+    assertThat(status).isEqualTo("updated")
+}
+
+// ============================================================================
+// Request with multiple assertions
+// ============================================================================
+POST("https://httpbin.org/post") {
+    header("Content-Type", "application/json")
+    header("X-Request-ID", "12345")
+    body("""{"test": "data"}""")
+}.then {
+    // Status assertion
+    assertStatus(200)
+    assertThat(getResponse().code).isEqualTo(200)
+
+    // Header assertion
+    assertHeader("Content-Type", "application/json")
+
+    // Body assertions
+    val test: String = decode("$.json.test")
+    assertThat(test).isEqualTo("data")
+    assertBodyContains("test")
+
+    // JsonPath assertions
+    val json: Map<String, Any> = decode("$.json")
+    assertTrue(json.containsKey("test"))
+}
+
+// ============================================================================
+// Request with query parameters
+// ============================================================================
+GET("https://httpbin.org/get") {
+    query("param1", "value1")
+    query("param2", "value2")
+    query("param3", "value3")
+}.then {
+    assertStatus(200)
+    val args: Map<String, String> = decode("$.args")
+    assertThat(args["param1"]).isEqualTo("value1")
+}
+
+// ============================================================================
+// Request with path parameters
+// ============================================================================
+GET("https://httpbin.org") {
+    path("users", "123")
+    path("posts", "456")
+}.then {
+    assertStatus(200)
+}
+
+// ============================================================================
+// Request with authentication
+// ============================================================================
+GET("https://httpbin.org/bearer") {
+    header("Authorization", "Bearer $apiKey")
+}.then {
+    assertStatus(200)
+    val authenticated: Boolean = decode("$.authenticated")
+    assertTrue(authenticated)
+}

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templateSet group="Kttp">
+    <!-- Basic HTTP methods -->
+    <template name="get" value="GET(&quot;$URL$&quot;) {&#10;    $END$&#10;}" description="GET request"
+              toReformat="true" toShortenFQNames="true">
+        <variable name="URL" expression="" defaultValue="&quot;https://httpbin.org/get&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <template name="post"
+              value="POST(&quot;$URL$&quot;) {&#10;    header(&quot;Content-Type&quot;, &quot;application/json&quot;)&#10;    body(jsonBody)&#10;    $END$&#10;}"
+              description="POST request" toReformat="true" toShortenFQNames="true">
+        <variable name="URL" expression="" defaultValue="&quot;https://httpbin.org/post&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <template name="put"
+              value="PUT(&quot;$URL$&quot;) {&#10;    header(&quot;Content-Type&quot;, &quot;application/json&quot;)&#10;    body(jsonBody)&#10;    $END$&#10;}"
+              description="PUT request" toReformat="true" toShortenFQNames="true">
+        <variable name="URL" expression="" defaultValue="&quot;https://httpbin.org/put&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <template name="delete" value="DELETE(&quot;$URL$&quot;) {&#10;    $END$&#10;}" description="DELETE request"
+              toReformat="true" toShortenFQNames="true">
+        <variable name="URL" expression="" defaultValue="&quot;https://httpbin.org/delete&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <template name="patch"
+              value="PATCH(&quot;$URL$&quot;) {&#10;    header(&quot;Content-Type&quot;, &quot;application/json&quot;)&#10;    body(jsonBody)&#10;    $END$&#10;}"
+              description="PATCH request" toReformat="true" toShortenFQNames="true">
+        <variable name="URL" expression="" defaultValue="&quot;https://httpbin.org/patch&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <template name="head" value="HEAD(&quot;$URL$&quot;) {&#10;    $END$&#10;}" description="HEAD request"
+              toReformat="true" toShortenFQNames="true">
+        <variable name="URL" expression="" defaultValue="&quot;https://httpbin.org/get&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <template name="options" value="OPTIONS(&quot;$URL$&quot;) {&#10;    $END$&#10;}" description="OPTIONS request"
+              toReformat="true" toShortenFQNames="true">
+        <variable name="URL" expression="" defaultValue="&quot;https://httpbin.org/get&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <!-- HTTP methods with then block -->
+    <template name="getthen"
+              value="GET(&quot;$URL$&quot;) {&#10;    $END$&#10;}.then {&#10;    assertStatus(200)&#10;    val data: String = decode(&quot;$.url&quot;)&#10;}"
+              description="GET request with then block" toReformat="true" toShortenFQNames="true">
+        <variable name="URL" expression="" defaultValue="&quot;https://httpbin.org/get&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <template name="postthen"
+              value="POST(&quot;$URL$&quot;) {&#10;    header(&quot;Content-Type&quot;, &quot;application/json&quot;)&#10;    body(jsonBody)&#10;    $END$&#10;}.then {&#10;    assertStatus(200)&#10;    val result: String = decode(&quot;$.json.greeting&quot;)&#10;}"
+              description="POST request with then block" toReformat="true" toShortenFQNames="true">
+        <variable name="URL" expression="" defaultValue="&quot;https://httpbin.org/post&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <template name="putthen"
+              value="PUT(&quot;$URL$&quot;) {&#10;    header(&quot;Content-Type&quot;, &quot;application/json&quot;)&#10;    body(jsonBody)&#10;    $END$&#10;}.then {&#10;    assertStatus(200)&#10;    val result: String = decode(&quot;$.json.greeting&quot;)&#10;}"
+              description="PUT request with then block" toReformat="true" toShortenFQNames="true">
+        <variable name="URL" expression="" defaultValue="&quot;https://httpbin.org/put&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <template name="deletethen"
+              value="DELETE(&quot;$URL$&quot;) {&#10;    $END$&#10;}.then {&#10;    assertStatus(200)&#10;}"
+              description="DELETE request with then block" toReformat="true" toShortenFQNames="true">
+        <variable name="URL" expression="" defaultValue="&quot;https://httpbin.org/delete&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <!-- Advanced then block templates -->
+    <template name="thenassert"
+              value=".then {&#10;    assertStatus($STATUS$)&#10;    assertThat(getResponse().code).isEqualTo($STATUS$)&#10;    val data: $TYPE$ = decode(&quot;$PATH$&quot;)&#10;    $END$&#10;}"
+              description="then block with assertions" toReformat="true" toShortenFQNames="true">
+        <variable name="STATUS" expression="" defaultValue="200" alwaysStopAt="true"/>
+        <variable name="TYPE" expression="" defaultValue="String" alwaysStopAt="true"/>
+        <variable name="PATH" expression="" defaultValue="&quot;$.data&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <template name="thenjsonpath"
+              value=".then {&#10;    assertStatus(200)&#10;    val name: String = jsonPath().readString(&quot;$.name&quot;)&#10;    val id: Long = jsonPath().readLong(&quot;$.id&quot;)&#10;    val items: List&lt;String&gt; = jsonPath().readList(&quot;$.items&quot;)&#10;    $END$&#10;}"
+              description="then block with JsonPath" toReformat="true" toShortenFQNames="true">
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <!-- Variable declarations -->
+    <template name="env" value="val $VAR$: String by env" description="Environment variable" toReformat="true"
+              toShortenFQNames="true">
+        <variable name="VAR" expression="" defaultValue="apiKey" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <template name="localfile" value="val $VAR$: String by localFile(&quot;$PATH$&quot;)"
+              description="Local file content" toReformat="true" toShortenFQNames="true">
+        <variable name="VAR" expression="" defaultValue="body" alwaysStopAt="true"/>
+        <variable name="PATH" expression="" defaultValue="&quot;request.json&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <!-- Request with variable -->
+    <template name="getvar"
+              value="val $VAR$: String by env&#10;&#10;GET(&quot;$${$VAR$}/path&quot;) {&#10;    $END$&#10;}"
+              description="GET request with environment variable" toReformat="true" toShortenFQNames="true">
+        <variable name="VAR" expression="" defaultValue="baseUrl" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+
+    <template name="postfile"
+              value="val body: String by localFile(&quot;$FILE$&quot;)&#10;&#10;POST(&quot;$URL$&quot;) {&#10;    header(&quot;Content-Type&quot;, &quot;application/json&quot;)&#10;    body(body)&#10;    $END$&#10;}.then {&#10;    assertStatus(200)&#10;}"
+              description="POST request with local file" toReformat="true" toShortenFQNames="true">
+        <variable name="FILE" expression="" defaultValue="&quot;request.json&quot;" alwaysStopAt="true"/>
+        <variable name="URL" expression="" defaultValue="&quot;https://httpbin.org/post&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="KOTLIN" value="true"/>
+        </context>
+    </template>
+</templateSet>

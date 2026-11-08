@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Loaded only when Spring plugin (com.intellij.spring) is present. -->
+<idea-plugin>
+    <actions>
+    </actions>
+</idea-plugin>

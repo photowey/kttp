@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="40" height="40">
+    <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#0f0c29;stop-opacity:1"/>
+            <stop offset="50%" style="stop-color:#302b63;stop-opacity:1"/>
+            <stop offset="100%" style="stop-color:#24243e;stop-opacity:1"/>
+        </linearGradient>
+
+        <linearGradient id="mainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#FF8A00;stop-opacity:1"/>
+            <stop offset="50%" style="stop-color:#7F52FF;stop-opacity:1"/>
+            <stop offset="100%" style="stop-color:#C711E1;stop-opacity:1"/>
+        </linearGradient>
+
+        <linearGradient id="ktCircleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#FF8A00;stop-opacity:0.3"/>
+            <stop offset="100%" style="stop-color:#C711E1;stop-opacity:0.3"/>
+        </linearGradient>
+
+        <filter id="glow">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+
+        <mask id="circleMask">
+            <rect x="-200" y="-200" width="400" height="400" fill="black"/>
+            <circle cx="0" cy="0" r="130" fill="white"/>
+        </mask>
+
+        <clipPath id="circleClip">
+            <circle cx="200" cy="200" r="130"/>
+        </clipPath>
+    </defs>
+
+    <g clip-path="url(#circleClip)">
+        <rect width="400" height="400" fill="url(#bgGrad)" rx="20"/>
+
+        <g transform="translate(200, 200)" filter="url(#glow)">
+
+            <circle cx="0" cy="0" r="120" fill="none" stroke="url(#mainGrad)" stroke-width="20" stroke-linecap="round"/>
+
+            <g mask="url(#circleMask)">
+                <rect x="-88" y="-35" width="10" height="70" rx="3" fill="url(#mainGrad)"/>
+                <path d="M -78 -15 L -58 -35 M -78 5 L -58 25" stroke="url(#mainGrad)" stroke-width="8"
+                      stroke-linecap="round"/>
+            </g>
+
+            <rect x="-40" y="-35" width="9" height="70" rx="2" fill="white" opacity="0.95"/>
+            <rect x="-19" y="-35" width="9" height="70" rx="2" fill="white" opacity="0.95"/>
+            <rect x="-48" y="-32" width="46" height="8" rx="2" fill="white" opacity="0.95"/>
+
+            <g mask="url(#circleMask)">
+                <rect x="38" y="-35" width="10" height="70" rx="3" fill="url(#mainGrad)"/>
+                <circle cx="58" cy="-5" r="16" fill="none" stroke="url(#mainGrad)" stroke-width="8"/>
+            </g>
+
+            <g transform="translate(60, -103.9)">
+                <circle cx="0" cy="0" r="10" fill="url(#ktCircleGrad)" stroke="url(#mainGrad)" stroke-width="1.5"/>
+                <text x="0" y="3" font-family="monospace" font-size="9" fill="white" text-anchor="middle"
+                      font-weight="bold">.kt
+                </text>
+            </g>
+
+            <g transform="rotate(-20)">
+                <circle cx="0" cy="-120" r="8" fill="#FF8A00"/>
+                <circle cx="104" cy="60" r="8" fill="#7F52FF"/>
+                <circle cx="-104" cy="60" r="8" fill="#C711E1"/>
+            </g>
+        </g>
+    </g>
+</svg>

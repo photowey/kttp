@@ -1,0 +1,100 @@
+name: Docs Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published stable release tag to deploy (vX.Y.Z)
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      release_tag:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build published stable documentation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - name: Require an existing published stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || {
+            echo 'An explicit stable vX.Y.Z release tag is required.' >&2
+            exit 1
+          }
+          [[ "$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --json isDraft,isPrerelease --jq '.isDraft == false and .isPrerelease == false')" == true ]] || {
+            echo 'Pages requires an existing published stable release.' >&2
+            exit 1
+          }
+
+      - name: Check out released source
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.release_tag }}
+
+      - name: Verify released source version and notes
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: python3 scripts/release.py validate --tag "$RELEASE_TAG"
+
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v6.0.0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: docs/design/uv.lock
+
+      - name: Build documentation from released source
+        working-directory: docs/design
+        env:
+          KTTP_DOCS_SITE_URL: ${{ steps.pages.outputs.base_url }}/
+        run: |
+          uv sync --locked
+          uv run --locked mkdocs build --strict
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: docs/design/site
+
+  deploy:
+    name: Publish GitHub Pages
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy released site
+        id: deployment
+        uses: actions/deploy-pages@v5.0.1
