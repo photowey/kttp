@@ -16,12 +16,11 @@
 
 package io.github.photowey.kttp.idea.cli
 
-import com.intellij.ide.plugins.PluginManagerCore
-import com.intellij.openapi.extensions.PluginId
 import io.github.photowey.kttp.idea.execution.KttpExecutionResult
+import io.github.photowey.kttp.idea.path.KttpPluginPath
+import java.io.File
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import java.io.File
 
 /**
  * Shared CLI argument model for script-based IDEA entry points.
@@ -115,8 +114,6 @@ data class KttpCliInvocation(
  */
 object KttpCliLocator {
 
-    private const val PLUGIN_ID = "io.github.photowey.kttp"
-
     /**
      * Finds a CLI JAR from an explicit override, plugin installation, development builds, or the user install directory.
      * Returns null when none exists; installed plugins are expected to include cli/kttp-cli.jar.
@@ -138,20 +135,9 @@ object KttpCliLocator {
             }
         }
 
-        try {
-            val pluginPath = PluginManagerCore.getPlugin(PluginId.getId(PLUGIN_ID))?.pluginPath?.toFile()
-            if (pluginPath != null) {
-                normalizePluginRoot(pluginPath)?.let { pluginRoot ->
-                    findPackagedCliJar(pluginRoot)?.let { cliJar ->
-                        return cliJar
-                    }
-                    findDevelopmentCliJarFromAncestors(pluginRoot)?.let { cliJar ->
-                        return cliJar
-                    }
-                }
-            }
-        } catch (_: Exception) {
-            // Plugin metadata may be unavailable during early startup or isolated tests.
+        KttpPluginPath.installedRoot()?.let { pluginRoot ->
+            findPackagedCliJar(pluginRoot)?.let { return it }
+            findDevelopmentCliJarFromAncestors(pluginRoot)?.let { return it }
         }
 
         projectBasePath?.let {

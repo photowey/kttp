@@ -18,19 +18,17 @@ package io.github.photowey.kttp.idea.toolwindow
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
-import com.intellij.openapi.application.WriteIntentReadAction
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.project.Project
 import io.github.photowey.kttp.idea.execution.ExecutionSummary
 import io.github.photowey.kttp.idea.execution.RequestExecutionMode
 import io.github.photowey.kttp.idea.io.HistoryPersistence
 import io.github.photowey.kttp.idea.io.HistoryPersistence.Record
-import java.io.IOException
+import io.github.photowey.kttp.idea.path.KttpFileNavigation
 import java.awt.BorderLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.io.File
+import java.io.IOException
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import javax.swing.DefaultListCellRenderer
@@ -92,12 +90,8 @@ class HistoryTabPanel(private val project: Project) : JPanel(BorderLayout()) {
         list.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 if (e.clickCount != 2) return
-                WriteIntentReadAction.run<RuntimeException> {
-                    val path = list.selectedValue?.responseFilePath ?: return@run
-                    if (!File(path).isFile) return@run
-                    val file = LocalFileSystem.getInstance().refreshAndFindFileByPath(path) ?: return@run
-                    FileEditorManager.getInstance(project).openFile(file, true)
-                }
+                val path = list.selectedValue?.responseFilePath ?: return
+                KttpFileNavigation.open(project, path)
             }
         })
         add(emptyLabel, BorderLayout.CENTER)

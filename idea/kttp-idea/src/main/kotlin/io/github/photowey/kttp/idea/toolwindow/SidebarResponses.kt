@@ -16,12 +16,12 @@
 
 package io.github.photowey.kttp.idea.toolwindow
 
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import io.github.photowey.kttp.idea.path.KttpFileNavigation
 import io.github.photowey.kttp.idea.toolwindow.CollectionsSidebar.GroupNode
 import io.github.photowey.kttp.idea.toolwindow.CollectionsSidebar.ResponseFileNode
 import java.awt.BorderLayout
@@ -160,6 +160,6 @@ internal class SidebarResponses(
 
     private fun openAt(path: TreePath?) {
         val item = (path?.lastPathComponent as? DefaultMutableTreeNode)?.userObject as? ResponseFileNode ?: return
-        if (item.file.isValid && !project.isDisposed) FileEditorManager.getInstance(project).openFile(item.file, true)
+        if (item.file.isValid && !project.isDisposed) KttpFileNavigation.open(project, item.file)
     }
 }

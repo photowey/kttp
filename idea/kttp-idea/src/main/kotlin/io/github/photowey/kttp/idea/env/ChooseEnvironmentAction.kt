@@ -29,6 +29,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import io.github.photowey.kttp.idea.lang.KttpFileType
+import io.github.photowey.kttp.idea.path.KttpFileNavigation
 import java.io.File
 import javax.swing.JComponent
 
@@ -183,7 +184,7 @@ class ChooseEnvironmentAction : ComboBoxAction() {
             val envFile = service.findEnvFile(scriptFile)
 
             if (envFile != null) {
-                FileEditorManager.getInstance(project).openFile(envFile, true)
+                KttpFileNavigation.open(project, envFile)
             } else {
                 createAndOpenEnvFile(project, scriptFile)
             }
@@ -212,7 +213,7 @@ class ChooseEnvironmentAction : ComboBoxAction() {
                     envFile.setBinaryContent(content.toByteArray())
                     // Open file in EDT
                     com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
-                        FileEditorManager.getInstance(project).openFile(envFile, true)
+                        KttpFileNavigation.open(project, envFile)
                     }
                 } catch (e: Exception) {
                     com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {

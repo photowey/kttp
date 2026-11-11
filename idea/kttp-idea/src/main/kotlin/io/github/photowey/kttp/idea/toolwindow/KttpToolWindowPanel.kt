@@ -68,8 +68,8 @@ class KttpToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
             onScriptFileChanged = { file ->
                 mainContentPanel.onScriptFileChanged(file)
             },
-            onAddRequestToScript = { file ->
-                mainContentPanel.addCurrentRequestToScript(file)
+            onAddRequestToScript = { file, onAdded ->
+                mainContentPanel.addCurrentRequestToScript(file, onAdded)
             }
         )
 

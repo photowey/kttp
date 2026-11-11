@@ -76,7 +76,8 @@ POST("https://httpbin.org/post", name = "Post JSON") {
 - 使用 **Run All Requests**，按顺序执行文件中注册的请求。
 
 脚本文本输出显示在 IDEA 的 **Run** 工具窗口。保存的响应文件也会出现在 Kttp 的 **Responses**
-树和 **History** 中。Kttp 的 **Response** 标签页显示最近一次 GUI Send 的结果。
+树和 **History** 中。点击 **Run** 中的响应路径可在编辑器中打开文件，右键菜单提供系统文件管理器定位操作。
+Kttp 的 **Response** 标签页显示最近一次 GUI Send 的结果。
 
 `then` 代码块的接收者是 `ThenContext`，可调用 `assertStatus`、`decode`、`getResponse` 等方法。
 如果需要以 `Response` 为接收者，请使用 `thenResponse`。

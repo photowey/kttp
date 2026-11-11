@@ -21,7 +21,6 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runWriteAction
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -29,6 +28,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import io.github.photowey.kttp.idea.icons.KttpIcons
 import io.github.photowey.kttp.idea.lang.KttpFileType
 import io.github.photowey.kttp.idea.path.KttpConsolesPath
+import io.github.photowey.kttp.idea.path.KttpFileNavigation
 
 /**
  * 在 Scratches and Consoles → Consoles → Kttp 下创建新的 .kttp.kts 脚本。
@@ -68,7 +68,7 @@ class NewKttpScriptAction : AnAction(
             }
             val file = dirVf.createChildData(this, fileName)
             VfsUtil.saveText(file, templateContent)
-            FileEditorManager.getInstance(project).openFile(file, true)
+            KttpFileNavigation.open(project, file)
         }
         // 刷新 consoles 父目录，使 Scratches and Consoles 视图能显示 Kttp 节点
         val consolesDir = kttpDir.parentFile

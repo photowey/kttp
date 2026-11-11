@@ -20,15 +20,17 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.psi.PsiDocumentManager
+import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.fixtures.impl.TempDirTestFixtureImpl
+import io.github.photowey.kttp.idea.KttpUiActions
 import io.github.photowey.kttp.idea.gui.GuiDraftService
 import io.github.photowey.kttp.idea.gui.RequestSpec
 import io.github.photowey.kttp.idea.gui.RequestTarget
 import io.github.photowey.kttp.idea.gui.ValueRef
 import io.github.photowey.kttp.idea.script.toKttpScript
-import org.jetbrains.kotlin.psi.KtFile
 import java.io.File
+import org.jetbrains.kotlin.psi.KtFile
 
 /**
  * Verifies saved script preparation and current request coordinates before GUI Follow Script execution.
@@ -166,13 +168,17 @@ class ScriptExecutionPreparationTest : BasePlatformTestCase() {
 
     private fun <T> withoutImplicitWriteIntent(action: () -> T): T {
         val application = ApplicationManager.getApplication()
-        return requireNotNull(application.threadingSupport).releaseTheAcquiredWriteIntentLockThenExecuteActionAndTakeWriteIntentLockBack {
+        var result: Result<T>? = null
+        requireNotNull(application.threadingSupport).releaseTheAcquiredWriteIntentLockThenExecuteActionAndTakeWriteIntentLockBack {
             assertTrue(application.isDispatchThread)
             assertFalse(
                 "Simulate an accessibility callback without IDEA's input-event lock",
                 application.isWriteIntentLockAcquired
             )
-            action()
+            KttpUiActions.submit(project) { result = runCatching(action) }
+            assertNull("The model operation must be deferred outside the accessibility callback", result)
         }
+        PlatformTestUtil.waitWithEventsDispatching("Write-safe UI operation completed", { result != null }, 10)
+        return requireNotNull(result).getOrThrow()
     }
 }

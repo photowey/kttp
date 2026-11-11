@@ -18,8 +18,10 @@ package io.github.photowey.kttp.idea.toolwindow
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.fixtures.impl.TempDirTestFixtureImpl
+import io.github.photowey.kttp.idea.KttpUiActions
 import io.github.photowey.kttp.idea.gui.GuiDraftService
 import io.github.photowey.kttp.idea.gui.RequestSpec
 import io.github.photowey.kttp.idea.gui.RequestTarget
@@ -68,7 +70,10 @@ class RequestScriptFileCoordinatorTest : BasePlatformTestCase() {
 
         withoutImplicitWriteIntent { RequestScriptFileCoordinator(project).open(target.path) }
 
-        assertTrue(FileEditorManager.getInstance(project).isFileOpen(target))
+        PlatformTestUtil.waitWithEventsDispatching(
+            "Script opened after background resolution",
+            { FileEditorManager.getInstance(project).isFileOpen(target) }, 10
+        )
     }
 
     private fun draft() = project.getService(GuiDraftService::class.java).createEmptyDraft().copy(
@@ -77,13 +82,17 @@ class RequestScriptFileCoordinatorTest : BasePlatformTestCase() {
 
     private fun <T> withoutImplicitWriteIntent(action: () -> T): T {
         val application = ApplicationManager.getApplication()
-        return requireNotNull(application.threadingSupport).releaseTheAcquiredWriteIntentLockThenExecuteActionAndTakeWriteIntentLockBack {
+        var result: Result<T>? = null
+        requireNotNull(application.threadingSupport).releaseTheAcquiredWriteIntentLockThenExecuteActionAndTakeWriteIntentLockBack {
             assertTrue(application.isDispatchThread)
             assertFalse(
                 "Simulate an accessibility callback without IDEA's input-event lock",
                 application.isWriteIntentLockAcquired
             )
-            action()
+            KttpUiActions.submit(project) { result = runCatching(action) }
+            assertNull("The model operation must be deferred outside the accessibility callback", result)
         }
+        PlatformTestUtil.waitWithEventsDispatching("Write-safe UI operation completed", { result != null }, 10)
+        return requireNotNull(result).getOrThrow()
     }
 }

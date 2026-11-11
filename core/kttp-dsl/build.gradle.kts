@@ -33,6 +33,21 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
+val versionResources = layout.buildDirectory.dir("generated/resources/kttpVersion")
+val generateKttpVersion by tasks.registering(WriteProperties::class) {
+    destinationFile.set(versionResources.map { it.file("kttp-version.properties") })
+    property("version", project.version.toString())
+}
+
+sourceSets.main {
+    resources.srcDir(versionResources)
+}
+
+tasks.processResources {
+    dependsOn(generateKttpVersion)
+}
+
 tasks.test {
     useJUnitPlatform()
+    systemProperty("kttp.test.expectedVersion", project.version.toString().removeSuffix("-SNAPSHOT"))
 }

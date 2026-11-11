@@ -9,6 +9,11 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+// Inherit platform interface defaults without generating obsolete compatibility bridges.
+kotlin {
+    compilerOptions.jvmDefault.set(org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode.NO_COMPATIBILITY)
+}
+
 repositories {
     intellijPlatform {
         defaultRepositories()
@@ -56,16 +61,16 @@ intellijPlatform {
 
         ideaVersion {
             sinceBuild = libs.versions.intellij.idea.since.build.get()
+            untilBuild = "263.*"
         }
 
         changeNotes = """
-            <p>Initial release.</p>
+            <p>Compatibility fixes for IntelliJ IDEA 2025.3 through 2026.3.</p>
             <ul>
-              <li>.kttp.kts file type and Scratches/Consoles integration</li>
-              <li>Execute Kttp Request (Ctrl+Alt+K, gutter, context menu)</li>
-              <li>Kttp tool window: Response, History, Assertions</li>
-              <li>Syntax highlighting, completion (HTTP methods, env/localFile vars), inspections</li>
-              <li>Variables: by env, localFile("path") with validation</li>
+              <li>Fix opening scripts and responses on newer IDE versions.</li>
+              <li>Supply script editor dependencies through the supported script definition API.</li>
+              <li>Remove obsolete Kotlin integration and internal plugin lookup APIs.</li>
+              <li>Use supported UI scheduling and move console file reveal to the response link context menu.</li>
             </ul>
         """.trimIndent()
     }
@@ -140,6 +145,9 @@ tasks.register<Sync>("createPluginLib") {
 
     from(configurations.runtimeClasspath.get()) {
         include { jarIncludePluginLib(it.name) }
+        // Share scripting API types with the Kotlin plugin across extension-point calls.
+        // Independent script execution keeps its own versions in kttp-lib/ and the CLI.
+        exclude { it.name.startsWith("kotlin-script") }
     }
 }
 

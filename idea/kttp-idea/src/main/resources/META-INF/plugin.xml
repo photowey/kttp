@@ -2,7 +2,7 @@
 <idea-plugin>
     <id>io.github.photowey.kttp</id>
     <name>Kttp</name>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1</version>
     <vendor url="https://photowey.github.io">io.github.photowey</vendor>
 
     <description
@@ -20,10 +20,6 @@
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <supportsKotlinPluginMode supportsK2="true"/>
-        <scriptAdditionalIdeaDependenciesProvider
-                order="first"
-                implementation="io.github.photowey.kttp.idea.script.KttpScriptAdditionalIdeaDependenciesProvider"
-        />
         <scriptDefinitionsProvider
                 implementation="io.github.photowey.kttp.idea.script.KttpScriptDefinitionsProvider"
                 order="first"

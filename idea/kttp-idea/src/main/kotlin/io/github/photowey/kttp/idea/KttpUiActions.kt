@@ -14,24 +14,25 @@
  * limitations under the License.
  */
 
-package io.github.photowey.kttp.idea.script
+package io.github.photowey.kttp.idea
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlin.idea.core.script.k2.highlighting.KotlinScripDeferredResolutionPolicy
 
 /**
- * 对 .kttp.kts 禁用 K2 脚本的延迟解析；其他脚本仍允许延迟解析。
- * 脚本依赖由 [KttpScriptAdditionalIdeaDependenciesProvider] 提供。
+ * Schedules model and editor operations on IDEA's write-safe UI queue.
+ * Swing accessibility callbacks may run on EDT without the platform's write-intent lock.
  *
  * @author photowey
  * @version 1.0.0
- * @since 2026/02/15
+ * @since 2026/11/11
  */
-class KttpScriptDeferredResolutionPolicy(private val project: Project) : KotlinScripDeferredResolutionPolicy {
-
-    override fun shouldDeferResolution(script: VirtualFile): Boolean {
-        if (script.name.endsWith(".kttp.kts")) return false
-        return true
+internal object KttpUiActions {
+    /** Defers the operation until a non-modal UI context and skips disposed projects. */
+    fun submit(project: Project, action: () -> Unit) {
+        ApplicationManager.getApplication().invokeLater({
+            if (!project.isDisposed) action()
+        }, ModalityState.nonModal())
     }
 }

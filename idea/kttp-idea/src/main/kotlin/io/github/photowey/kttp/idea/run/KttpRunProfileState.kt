@@ -22,22 +22,22 @@ import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ReadAction
-import io.github.photowey.kttp.core.context.execution.DeclarationCoordinates
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
+import io.github.photowey.kttp.core.context.execution.DeclarationCoordinates
 import io.github.photowey.kttp.idea.cli.KttpCliInvocation
-import io.github.photowey.kttp.idea.execution.RequestExecutionMode
-import io.github.photowey.kttp.idea.script.toKttpScript
-import io.github.photowey.kttp.idea.script.sourceLines
 import io.github.photowey.kttp.idea.env.KttpEnvironmentService
+import io.github.photowey.kttp.idea.execution.RequestExecutionMode
 import io.github.photowey.kttp.idea.io.HistoryPersistence
 import io.github.photowey.kttp.idea.path.KttpConsolesPath
+import io.github.photowey.kttp.idea.script.sourceLines
+import io.github.photowey.kttp.idea.script.toKttpScript
 import io.github.photowey.kttp.idea.toolwindow.KttpToolWindowPanel
 import java.io.IOException
-import java.nio.file.Path
 import java.nio.file.Files
+import java.nio.file.Path
 
 /**
  * Launches the Kttp CLI and imports saved responses into IDEA history.
@@ -69,7 +69,7 @@ class KttpRunProfileState(
             scriptPath = scriptPath.toAbsolutePath().toString(),
             requestName = (runConfiguration.runStrategy as? ScriptRunStrategy.SingleDeclaration)
                 ?.coordinates?.let { it as? DeclarationCoordinates.Name }?.name,
-            requestLines = ReadAction.compute<String?, RuntimeException> {
+            requestLines = ApplicationManager.getApplication().runReadAction(Computable<String?> {
                 val coordinates = (runConfiguration.runStrategy as? ScriptRunStrategy.SingleDeclaration)?.coordinates
                 if (coordinates !is DeclarationCoordinates.Number) null
                 else {
@@ -79,7 +79,7 @@ class KttpRunProfileState(
                         ?: throw CantRunException("The selected request is no longer available")
                     declaration.sourceLines().asString()
                 }
-            },
+            }),
             envVariables = envVars,
             responseDir = responsesDir.absolutePath,
             responseManifest = responseManifest.absolutePath,

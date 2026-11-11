@@ -27,17 +27,18 @@ import com.intellij.psi.PsiDocumentManager
 import io.github.photowey.kttp.idea.gui.GuiDraft
 import io.github.photowey.kttp.idea.gui.GuiDraftService
 import io.github.photowey.kttp.idea.gui.GuiMode
+import io.github.photowey.kttp.idea.path.KttpFileNavigation
 import io.github.photowey.kttp.idea.toolwindow.CollectionsSidebar.DraftNode
 import io.github.photowey.kttp.idea.toolwindow.CollectionsSidebar.FileNode
 import io.github.photowey.kttp.idea.toolwindow.CollectionsSidebar.RequestNode
+import java.io.IOException
+import javax.swing.JMenuItem
+import javax.swing.JPopupMenu
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtScriptInitializer
-import java.io.IOException
-import javax.swing.JMenuItem
-import javax.swing.JPopupMenu
 
 /**
  * User commands own their confirmation and failure boundaries, then report successful changes.
@@ -128,7 +129,7 @@ internal class SidebarContextMenus(
             return
         }
         val source = element.containingFile?.virtualFile ?: return
-        menu.add(item("Open Script") { FileEditorManager.getInstance(project).openFile(source, true) })
+        menu.add(item("Open Script") { KttpFileNavigation.open(project, source) })
         if (request.mode != GuiMode.GUI_READY) {
             menu.add(item("Quick Request details") {
                 Messages.showInfoMessage(project, request.tooltip, "Quick Request support")

@@ -18,9 +18,9 @@ package io.github.photowey.kttp.idea.toolwindow
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 
@@ -134,8 +134,8 @@ internal class SidebarParseCache(
 
     /** Safe on a background thread: the version is an immutable copy captured by the owner. */
     fun read(file: VirtualFile, version: SidebarCacheVersion): SidebarParsedFile? =
-        ReadAction.compute<SidebarParsedFile?, RuntimeException> {
-            if (disposed || project.isDisposed || !file.isValid) return@compute null
+        ApplicationManager.getApplication().runReadAction(Computable<SidebarParsedFile?> {
+            if (disposed || project.isDisposed || !file.isValid) return@Computable null
             val path = file.path
             val stamp = file.modificationStamp
             val requests = parser.read(file).toList()
@@ -143,7 +143,7 @@ internal class SidebarParseCache(
                 file, path, stamp, documentStamp(file), version.epoch,
                 version.generations[path] ?: 0L, requests
             )
-        }
+        })
 
     /** Publishes on EDT only when lifecycle, path, file/document stamps, and generation still match the parsed snapshot. */
     fun publish(parsed: SidebarParsedFile): Boolean {

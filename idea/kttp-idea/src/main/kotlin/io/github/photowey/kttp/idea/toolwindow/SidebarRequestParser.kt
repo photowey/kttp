@@ -16,8 +16,9 @@
 
 package io.github.photowey.kttp.idea.toolwindow
 
-import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import io.github.photowey.kttp.idea.gui.GuiBridgeFormatter
@@ -51,10 +52,10 @@ internal data class SidebarRequestDisplayInfo(
  */
 internal class SidebarRequestParser(private val project: Project) {
     fun read(file: VirtualFile): List<SidebarRequestDisplayInfo> =
-        ReadAction.compute<List<SidebarRequestDisplayInfo>, RuntimeException> {
-            val psiFile = PsiManager.getInstance(project).findFile(file) as? KtFile ?: return@compute emptyList()
+        ApplicationManager.getApplication().runReadAction(Computable<List<SidebarRequestDisplayInfo>> {
+            val psiFile = PsiManager.getInstance(project).findFile(file) as? KtFile ?: return@Computable emptyList()
             collectRequestDisplayInfo(psiFile, file.path)
-        }
+        })
 
     private fun collectRequestDisplayInfo(psiFile: KtFile, sourceFilePath: String): List<SidebarRequestDisplayInfo> {
         val script = psiFile.toKttpScript() ?: return emptyList()

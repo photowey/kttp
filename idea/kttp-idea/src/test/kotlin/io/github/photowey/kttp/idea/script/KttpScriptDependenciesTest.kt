@@ -22,9 +22,9 @@ import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.testFramework.PlatformTestUtil
-import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.fixtures.impl.TempDirTestFixtureImpl
+import com.intellij.testFramework.replaceService
 import io.github.photowey.kttp.script.Kttp
 import java.io.File
 import java.util.jar.JarEntry
@@ -38,7 +38,7 @@ import java.util.jar.JarOutputStream
  * @since 2026/11/07
  */
 class KttpScriptDependenciesTest : BasePlatformTestCase() {
-    private val provider = KttpScriptAdditionalIdeaDependenciesProvider()
+    private val provider = KttpScriptLibrary()
     private lateinit var dslJar: File
 
     override fun createTempDirTestFixture() = TempDirTestFixtureImpl()
@@ -71,8 +71,7 @@ class KttpScriptDependenciesTest : BasePlatformTestCase() {
     }
 
     fun testNewLibraryExposesTheScriptTemplateInsideTheArchive() {
-        val file = myFixture.tempDirFixture.createFile("dependencies.kttp.kts")
-        provider.getRelatedLibraries(file, project)
+        provider.ensureInstalledLibrary(project)
         await("Kttp library created") { library()?.getUrls(OrderRootType.CLASSES)?.isNotEmpty() == true }
         assertEquals(listOf(VfsUtil.getUrlForLibraryRoot(dslJar)), library()!!.getUrls(OrderRootType.CLASSES).toList())
         val roots = library()!!.getFiles(OrderRootType.CLASSES)
@@ -84,8 +83,7 @@ class KttpScriptDependenciesTest : BasePlatformTestCase() {
     fun testLegacyFileRootsAreRepairedWithoutDeletingTheLibrary() {
         val jarFile = VfsUtil.findFileByIoFile(dslJar, true)!!
         val existing = createLibrary(jarFile.url)
-        val file = myFixture.tempDirFixture.createFile("legacy.kttp.kts")
-        provider.getRelatedLibraries(file, project)
+        provider.ensureInstalledLibrary(project)
         await("Legacy roots converted to archive roots") {
             library()?.getUrls(OrderRootType.CLASSES)?.toList() == listOf(VfsUtil.getUrlForLibraryRoot(dslJar))
         }
@@ -94,8 +92,7 @@ class KttpScriptDependenciesTest : BasePlatformTestCase() {
 
     fun testStaleVersionRootsAreReplacedWithTheInstalledClasspath() {
         createLibrary("jar:///missing/previous-kttp-version.jar!/")
-        val file = myFixture.tempDirFixture.createFile("updated.kttp.kts")
-        provider.getRelatedLibraries(file, project)
+        provider.ensureInstalledLibrary(project)
         await("Installed JAR replaces obsolete roots") {
             library()?.getUrls(OrderRootType.CLASSES)?.toList() == listOf(VfsUtil.getUrlForLibraryRoot(dslJar))
         }

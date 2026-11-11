@@ -19,7 +19,7 @@ package io.github.photowey.kttp.core.util
 import kotlin.KotlinVersion
 
 /**
- * Provides User-Agent string for Kttp requests.
+ * Identifies Kttp requests using the running Kotlin version and the Kttp build metadata.
  *
  * @author photowey
  * @version 1.0.0
@@ -32,10 +32,11 @@ object UserAgentProvider {
     }
 
     private val kttpVersion: String by lazy {
-        // Try to read from system property first (set by plugin)
+        // Preserve the explicit runtime override; normal builds supply the resource through Gradle.
         val rawVersion = System.getProperty("kttp.version")
+            ?.takeIf { it.isNotBlank() }
             ?: readVersionFromResource()
-            ?: "1.0.0"
+            ?: "dev"
         // Remove SNAPSHOT suffix for User-Agent
         rawVersion.removeSuffix("-SNAPSHOT")
     }
@@ -58,7 +59,7 @@ object UserAgentProvider {
                 java.io.InputStreamReader(resource.openStream(), Charsets.UTF_8).use { reader ->
                     java.util.Properties().apply {
                         load(reader)
-                    }.getProperty("version")
+                    }.getProperty("version")?.takeIf { it.isNotBlank() }
                 }
             } else {
                 null

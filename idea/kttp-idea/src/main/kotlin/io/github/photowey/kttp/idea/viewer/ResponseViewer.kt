@@ -17,7 +17,6 @@
 package io.github.photowey.kttp.idea.viewer
 
 import com.intellij.ide.actions.RevealFileAction
-import com.intellij.openapi.application.WriteIntentReadAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.EditorFactory
@@ -25,10 +24,10 @@ import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.EditorTextField
 import com.intellij.ui.components.JBScrollPane
-import java.awt.datatransfer.StringSelection
-import com.intellij.openapi.vfs.LocalFileSystem
-import java.awt.BorderLayout
 import io.github.photowey.kttp.idea.execution.RequestExecutionMode
+import io.github.photowey.kttp.idea.path.KttpFileNavigation
+import java.awt.BorderLayout
+import java.awt.datatransfer.StringSelection
 import java.io.File
 import javax.swing.JPanel
 import javax.swing.JTabbedPane
@@ -121,16 +120,7 @@ class ResponseViewer(private val project: Project) : JPanel(BorderLayout()) {
 
     private fun openInEditor() {
         val path = currentResponseFilePath ?: return
-        val application = ApplicationManager.getApplication()
-        application.executeOnPooledThread {
-            if (project.isDisposed || !File(path).isFile) return@executeOnPooledThread
-            val file = LocalFileSystem.getInstance().refreshAndFindFileByPath(path) ?: return@executeOnPooledThread
-            application.invokeLater({
-                if (!project.isDisposed && file.isValid) WriteIntentReadAction.run<RuntimeException> {
-                    com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project).openFile(file, true)
-                }
-            }, project.disposed)
-        }
+        KttpFileNavigation.open(project, path)
     }
 
     private fun copyPath() {

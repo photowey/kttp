@@ -21,7 +21,7 @@ import java.io.File
 
 /**
  * Utility for Kttp script execution.
- * Used by [KttpScriptAdditionalIdeaDependenciesProvider] and [KttpScriptDefinitionsProvider]
+ * Used by [KttpScriptLibrary] and [KttpScriptDefinitionsProvider]
  * to get script classpath / External Libraries from plugin's kttp-lib directory only.
  *
  * @author photowey

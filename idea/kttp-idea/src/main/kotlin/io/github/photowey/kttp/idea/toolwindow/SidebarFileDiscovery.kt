@@ -16,9 +16,10 @@
 
 package io.github.photowey.kttp.idea.toolwindow
 
-import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
@@ -44,10 +45,10 @@ internal data class SidebarFileGroups(val project: List<VirtualFile>, val kttp: 
  */
 internal class SidebarFileDiscovery(private val project: Project) {
     fun scripts(): SidebarFileGroups {
-        val projectFiles = ReadAction.compute<List<VirtualFile>, RuntimeException> {
+        val projectFiles = ApplicationManager.getApplication().runReadAction(Computable<List<VirtualFile>> {
             if (project.isDisposed) emptyList()
             else ProjectRootManager.getInstance(project).contentRoots.flatMap(::scriptsUnder)
-        }
+        })
         return SidebarFileGroups(
             projectFiles.distinct(),
             findDirectory(KttpConsolesPath.getKttpConsolesDir())?.let(::scriptsUnder).orEmpty()

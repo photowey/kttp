@@ -60,7 +60,8 @@ by draft title or script file name.
 ## Responses and history
 
 The **Response** view shows the latest GUI Send result. Script Run writes text to the IDEA **Run** window;
-its saved files appear in **Responses** and **History**.
+its saved files appear in **Responses** and **History**. In **Run**, click the response path to open it in the editor,
+or use its context menu to reveal it in the system file manager.
 
 During Send, an animated indicator and elapsed time remain visible until execution or cancellation completes.
 A response preview can appear while the full file is being saved and script callbacks are still running. It remains

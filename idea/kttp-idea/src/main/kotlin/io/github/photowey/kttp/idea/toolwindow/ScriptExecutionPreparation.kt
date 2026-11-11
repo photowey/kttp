@@ -16,7 +16,6 @@
 
 package io.github.photowey.kttp.idea.toolwindow
 
-import com.intellij.openapi.application.WriteIntentReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -26,8 +25,8 @@ import io.github.photowey.kttp.idea.gui.DraftOwnership
 import io.github.photowey.kttp.idea.gui.GuiDraft
 import io.github.photowey.kttp.idea.gui.GuiDraftService
 import io.github.photowey.kttp.idea.script.KttpRequestDeclaration
-import io.github.photowey.kttp.idea.script.toKttpScript
 import io.github.photowey.kttp.idea.script.sourceLines
+import io.github.photowey.kttp.idea.script.toKttpScript
 import org.jetbrains.kotlin.psi.KtFile
 
 /**
@@ -57,22 +56,21 @@ internal class ScriptExecutionPreparation(private val project: Project) {
      * Prepares a single Follow Script target on EDT: saves the selected source or generates and persists a draft script.
      * Returns current source-line coordinates and does not execute the script.
      */
-    fun prepare(draft: GuiDraft, source: VirtualFile?, selected: KttpRequestDeclaration?): PreparedScriptRequest =
-        WriteIntentReadAction.compute<PreparedScriptRequest> {
-            if (draft.ownership == DraftOwnership.SCRIPT_IMPORTED) prepareSource(draft, source, selected)
-            else {
-                val file = RequestScriptFileCoordinator(project).generate(draft)
-                val saved = project.getService(GuiDraftService::class.java).markGenerated(draft, file.path)
-                val declaration = (PsiManager.getInstance(project).findFile(file) as? KtFile)
-                    ?.toKttpScript()?.findRequestDeclarations()?.singleOrNull()
-                PreparedScriptRequest(
-                    saved,
-                    file,
-                    0,
-                    requireNotNull(declaration) { "Cannot locate the generated request." }.sourceLines().asString()
-                )
-            }
+    fun prepare(draft: GuiDraft, source: VirtualFile?, selected: KttpRequestDeclaration?): PreparedScriptRequest {
+        return if (draft.ownership == DraftOwnership.SCRIPT_IMPORTED) prepareSource(draft, source, selected)
+        else {
+            val file = RequestScriptFileCoordinator(project).generate(draft)
+            val saved = project.getService(GuiDraftService::class.java).markGenerated(draft, file.path)
+            val declaration = (PsiManager.getInstance(project).findFile(file) as? KtFile)
+                ?.toKttpScript()?.findRequestDeclarations()?.singleOrNull()
+            PreparedScriptRequest(
+                saved,
+                file,
+                0,
+                requireNotNull(declaration) { "Cannot locate the generated request." }.sourceLines().asString()
+            )
         }
+    }
 
     /**
      * Commits and saves the selected source document, then reidentifies the request by its PSI element.

@@ -106,7 +106,7 @@ class SidebarSelectionTest : BasePlatformTestCase() {
     fun testAddRequestPendingSelectionWinsOverTheCurrentFile() {
         val oldFile = myFixture.addFileToProject("old.kttp.kts", "GET(\"https://example.com/old\")").virtualFile
         var addedFile: com.intellij.openapi.vfs.VirtualFile? = null
-        val sidebar = CollectionsSidebar(project, { _, _, _, _ -> }, {}, onAddRequestToScript = { addedFile })
+        val sidebar = CollectionsSidebar(project, { _, _, _, _ -> }, {}, onAddRequestToScript = { _, completed -> addedFile?.let(completed) })
         val tree = requestTree(sidebar)
         tree.selectionPath = TreePath(waitForFile(tree, oldFile.path).path)
         addedFile = myFixture.addFileToProject("new.kttp.kts", "POST(\"https://example.com/new\")").virtualFile

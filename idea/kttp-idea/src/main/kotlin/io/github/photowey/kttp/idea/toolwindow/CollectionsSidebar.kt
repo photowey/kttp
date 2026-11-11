@@ -19,7 +19,6 @@ package io.github.photowey.kttp.idea.toolwindow
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
@@ -31,6 +30,7 @@ import com.intellij.util.ui.JBUI
 import io.github.photowey.kttp.idea.gui.GuiDraft
 import io.github.photowey.kttp.idea.gui.GuiDraftService
 import io.github.photowey.kttp.idea.gui.GuiMode
+import io.github.photowey.kttp.idea.path.KttpFileNavigation
 import io.github.photowey.kttp.idea.script.KttpRequestDeclaration
 import java.awt.BorderLayout
 import java.awt.CardLayout
@@ -64,7 +64,7 @@ class CollectionsSidebar(
     private val onRequestSelected: (KttpRequestDeclaration?, VirtualFile?, Int?, Boolean) -> Unit,
     private val onDraftSelected: (GuiDraft) -> Unit,
     private val onScriptFileChanged: (VirtualFile) -> Unit = {},
-    private val onAddRequestToScript: (VirtualFile?) -> VirtualFile? = { null }
+    private val onAddRequestToScript: (VirtualFile?, (VirtualFile) -> Unit) -> Unit = { _, _ -> }
 ) : JPanel(BorderLayout()) {
 
     private val draftService = project.getService(GuiDraftService::class.java)
@@ -232,10 +232,12 @@ class CollectionsSidebar(
 
     private fun addRequestToScript() {
         val selectedFile = selectedScriptFile?.takeIf { it.isValid && it.name.endsWith(".kttp.kts") }
-        val file = onAddRequestToScript(selectedFile) ?: return
-        pendingSelectionKey = "file:${file.path}"
-        FileEditorManager.getInstance(project).openFile(file, true)
-        refreshCollections()
+        onAddRequestToScript(selectedFile) { file ->
+            if (project.isDisposed) return@onAddRequestToScript
+            pendingSelectionKey = "file:${file.path}"
+            KttpFileNavigation.open(project, file)
+            refreshCollections()
+        }
     }
 
     private fun setupTreeListeners() {
@@ -274,7 +276,7 @@ class CollectionsSidebar(
                     val userObject = node.userObject
                     if (userObject is FileNode) {
                         tree.expandPath(path)
-                        FileEditorManager.getInstance(project).openFile(userObject.file, true)
+                        KttpFileNavigation.open(project, userObject.file)
                     }
                 }
             }

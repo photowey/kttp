@@ -16,10 +16,8 @@
 
 package io.github.photowey.kttp.idea.toolwindow
 
-import com.intellij.openapi.application.WriteIntentReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -28,13 +26,14 @@ import com.intellij.psi.PsiDocumentManager
 import io.github.photowey.kttp.idea.gui.GuiDraft
 import io.github.photowey.kttp.idea.gui.GuiScriptGenerator
 import io.github.photowey.kttp.idea.path.KttpConsolesPath
+import io.github.photowey.kttp.idea.path.KttpFileNavigation
 import io.github.photowey.kttp.idea.path.KttpProjectPath
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
 /**
- * Script document writes and conflict protection, including access from Swing accessibility callbacks.
+ * Script document writes and conflict protection, called from the write-safe UI queue.
  *
  * @author photowey
  * @version 1.0.0
@@ -45,7 +44,7 @@ internal class RequestScriptFileCoordinator(private val project: Project) {
      * Appends to the selected script document or creates a unique project-local temporary script.
      * Existing text and unsaved document edits are retained; document writes use an IDEA write command.
      */
-    fun append(draft: GuiDraft, targetScript: VirtualFile?): VirtualFile = WriteIntentReadAction.compute<VirtualFile> {
+    fun append(draft: GuiDraft, targetScript: VirtualFile?): VirtualFile {
         require(targetScript == null || targetScript.isValid && targetScript.name.endsWith(".kttp.kts") && targetScript.isWritable) {
             "The selected script is unavailable or read-only."
         }
@@ -73,7 +72,7 @@ internal class RequestScriptFileCoordinator(private val project: Project) {
                 FileDocumentManager.getInstance().saveDocument(document)
             }
         }
-        requireNotNull(LocalFileSystem.getInstance().refreshAndFindFileByIoFile(targetFile)) {
+        return requireNotNull(LocalFileSystem.getInstance().refreshAndFindFileByIoFile(targetFile)) {
             "The request script was written but could not be opened."
         }
     }
@@ -82,7 +81,7 @@ internal class RequestScriptFileCoordinator(private val project: Project) {
      * Writes generated DSL through a document command. Reuses a generated path only when disk and cached document
      * match its saved fingerprint; otherwise chooses a new path to preserve manual edits.
      */
-    fun generate(draft: GuiDraft): VirtualFile = WriteIntentReadAction.compute<VirtualFile> {
+    fun generate(draft: GuiDraft): VirtualFile {
         val target = resolveTarget(draft)
         target.parentFile?.mkdirs()
         val parent = requireNotNull(LocalFileSystem.getInstance().refreshAndFindFileByIoFile(target.parentFile)) {
@@ -99,12 +98,11 @@ internal class RequestScriptFileCoordinator(private val project: Project) {
             PsiDocumentManager.getInstance(project).commitDocument(document)
             FileDocumentManager.getInstance().saveDocument(document)
         }
-        virtualFile
+        return virtualFile
     }
 
-    fun open(path: String?) = WriteIntentReadAction.run<RuntimeException> {
-        val file = path?.let { LocalFileSystem.getInstance().refreshAndFindFileByPath(it) } ?: return@run
-        FileEditorManager.getInstance(project).openFile(file, true)
+    fun open(path: String?) {
+        if (path != null) KttpFileNavigation.open(project, path)
     }
 
     private fun resolveTarget(draft: GuiDraft): File {

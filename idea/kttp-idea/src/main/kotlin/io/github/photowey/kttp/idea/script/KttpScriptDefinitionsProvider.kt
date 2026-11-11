@@ -17,7 +17,13 @@
 package io.github.photowey.kttp.idea.script
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
 import java.io.File
+import kotlin.script.experimental.api.with
+import kotlin.script.experimental.host.ScriptDefinition
+import kotlin.script.experimental.host.ScriptingHostConfiguration
+import kotlin.script.experimental.jvm.jvm
+import kotlin.script.experimental.jvm.updateClasspath
 
 /**
  * Provides Kttp script definition to the Kotlin plugin.
@@ -26,7 +32,7 @@ import java.io.File
  * @version 1.0.0
  * @since 2026/02/15
  */
-class KttpScriptDefinitionsProvider : kotlin.script.experimental.intellij.ScriptDefinitionsProvider {
+class KttpScriptDefinitionsProvider(private val project: Project) : kotlin.script.experimental.intellij.ScriptDefinitionsProvider {
 
     override val id: String = "kttp"
 
@@ -44,6 +50,22 @@ class KttpScriptDefinitionsProvider : kotlin.script.experimental.intellij.Script
             return emptyList()
         }
         return KttpScriptRunUtils.getKttpRunnerJars()
+    }
+
+    /** Supplies editor dependencies through the script configuration on both old and new Kotlin plugins. */
+    override fun provideDefinitions(
+        baseHostConfiguration: ScriptingHostConfiguration,
+        loadedScriptDefinitions: List<ScriptDefinition>
+    ): Iterable<ScriptDefinition> {
+        if (loadedScriptDefinitions.isEmpty()) return emptyList()
+        val jars = KttpScriptRunUtils.getKttpRunnerJars()
+        KttpScriptLibrary().ensureInstalledLibrary(project)
+        return loadedScriptDefinitions.map { definition ->
+            ScriptDefinition(
+                definition.compilationConfiguration.with { jvm { updateClasspath(jars) } },
+                definition.evaluationConfiguration
+            )
+        }
     }
 
     override fun useDiscovery(): Boolean = false

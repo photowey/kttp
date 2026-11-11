@@ -78,7 +78,8 @@ POST("https://httpbin.org/post", name = "Post JSON") {
 - Use **Run All Requests** to execute the file's registered requests in order.
 
 Script output appears in the IDEA **Run** tool window. Saved response files also appear in Kttp's **Responses** tree and
-**History**. The Kttp **Response** tab displays the latest GUI Send result.
+**History**. Click a response path in **Run** to open it in the editor; its context menu provides the platform's
+reveal-in-file-manager action. The Kttp **Response** tab displays the latest GUI Send result.
 
 The `then` receiver is `ThenContext`, with methods such as `assertStatus`, `decode`, and `getResponse`. For a `Response`
 receiver, use `thenResponse`.

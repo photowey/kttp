@@ -26,14 +26,14 @@ import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.sun.net.httpserver.HttpServer
 import io.github.photowey.kttp.core.enums.HttpMethod
-import io.github.photowey.kttp.idea.gui.*
-import io.github.photowey.kttp.idea.script.toKttpScript
 import io.github.photowey.kttp.idea.execution.KttpExecutionResult
 import io.github.photowey.kttp.idea.execution.RequestExecutionMode
+import io.github.photowey.kttp.idea.gui.*
 import io.github.photowey.kttp.idea.path.KttpProjectPath
-import java.io.File
+import io.github.photowey.kttp.idea.script.toKttpScript
 import java.awt.Component
 import java.awt.Container
+import java.io.File
 import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.util.UUID
@@ -442,8 +442,10 @@ class RequestEditorWorkflowTest : BasePlatformTestCase() {
     private fun draft(spec: RequestSpec) =
         GuiDraft(UUID.randomUUID().toString(), "Workflow test", DraftOwnership.DETACHED, spec)
 
-    private fun click(editor: RequestEditorPanel, text: String) =
+    private fun click(editor: RequestEditorPanel, text: String) {
         descendants(editor).filterIsInstance<JButton>().single { it.text == text }.doClick()
+        com.intellij.util.ui.UIUtil.dispatchAllInvocationEvents()
+    }
 
     private fun descendants(component: Component): Sequence<Component> = sequence {
         yield(component)

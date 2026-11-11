@@ -16,7 +16,11 @@
 
 package io.github.photowey.kttp.core.constant
 
+import io.github.photowey.kttp.core.util.UserAgentProvider
+
 const val LANGUAGE_JSON_PATH = "JSONPath"
 
 val PATH_VARIABLE_REGEX = Regex("""\{(\p{javaJavaIdentifierStart}[\p{javaJavaIdentifierPart}-]*)}""")
-const val DEFAULT_USER_AGENT = "Kotlin/2.1.20 Kttp/1.0.0"
+/** Uses the same build metadata as headers added by RequestBuilder. */
+val DEFAULT_USER_AGENT: String
+    get() = UserAgentProvider.userAgent()

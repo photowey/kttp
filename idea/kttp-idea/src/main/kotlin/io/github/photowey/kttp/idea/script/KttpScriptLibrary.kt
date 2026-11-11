@@ -19,37 +19,27 @@ package io.github.photowey.kttp.idea.script
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.openapi.vfs.VfsUtil
-import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlin.idea.core.script.v1.ScriptAdditionalIdeaDependenciesProvider
 import java.io.File
 
 /**
- * Supplies installed Kttp JAR roots to the Kotlin editor and repairs stale script libraries.
+ * Repairs the project library that exposes installed Kttp JARs in External Libraries.
+ * Editor resolution receives the same JARs through the script compilation configuration.
  *
  * @author photowey
  * @version 1.0.0
  * @since 2026/02/15
  */
-class KttpScriptAdditionalIdeaDependenciesProvider : ScriptAdditionalIdeaDependenciesProvider {
+class KttpScriptLibrary {
 
-    private val log = Logger.getInstance(KttpScriptAdditionalIdeaDependenciesProvider::class.java)
+    private val log = Logger.getInstance(KttpScriptLibrary::class.java)
 
-    /** Kttp scripts use their installed dependency library without inheriting the host module's classpath. */
-    override fun getRelatedModules(file: VirtualFile, project: Project): List<Module> {
-        if (isKttpFile(file)) return emptyList()
-        return listOfNotNull(ModuleUtil.findModuleForFile(file, project))
-    }
-
-    override fun getRelatedLibraries(file: VirtualFile, project: Project): List<Library> {
-        if (!isKttpFile(file)) return emptyList()
-
+    /** Schedules archive-root repair without writing the project model inside Kotlin's read action. */
+    fun ensureInstalledLibrary(project: Project) {
         val library = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
             .getLibraryByName(KttpScriptLibraries.LIBRARY_NAME)
         val jars = KttpScriptRunUtils.getKttpRunnerJars()
@@ -59,7 +49,6 @@ class KttpScriptAdditionalIdeaDependenciesProvider : ScriptAdditionalIdeaDepende
         } else if (!hasRoots(library, roots)) {
             scheduleLibraryUpdate(project, jars, roots)
         }
-        return listOfNotNull(library)
     }
 
     /** Refreshes JAR files off the UI thread, then defers model writes out of Kotlin's read action. */
@@ -97,6 +86,4 @@ class KttpScriptAdditionalIdeaDependenciesProvider : ScriptAdditionalIdeaDepende
 
     private fun hasRoots(library: Library?, roots: List<String>): Boolean =
         library?.getUrls(OrderRootType.CLASSES)?.toSet() == roots.toSet()
-
-    private fun isKttpFile(file: VirtualFile): Boolean = file.name.endsWith(".kttp.kts")
 }

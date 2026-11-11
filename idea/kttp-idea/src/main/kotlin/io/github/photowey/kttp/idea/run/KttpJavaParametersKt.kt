@@ -69,7 +69,7 @@ fun kttpRunScriptJavaParameters(
     // Classpath - use CLI JAR
     val cliJar: File = KttpCliLocator.findCliJar(project.basePath)
         ?: throw CantRunException("kttp-cli.jar not found. Please build with: ./gradlew :core:kttp-cli:shadowJar")
-    params.classPath.add(cliJar)
+    params.classPath.add(cliJar.absolutePath)
 
     params.programParametersList.addAll(invocation.toProgramArguments())
     configure(params)

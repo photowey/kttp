@@ -18,15 +18,15 @@ package io.github.photowey.kttp.idea.toolwindow
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import io.github.photowey.kttp.idea.gui.GuiDraft
+import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.vfs.VirtualFile
 import io.github.photowey.kttp.idea.execution.KttpExecutionResult
+import io.github.photowey.kttp.idea.gui.GuiDraft
 import io.github.photowey.kttp.idea.script.KttpRequestDeclaration
 import io.github.photowey.kttp.idea.viewer.ResponseViewer
 import java.awt.BorderLayout
 import java.io.IOException
-import com.intellij.openapi.ui.Messages
 import javax.swing.JPanel
-import com.intellij.openapi.vfs.VirtualFile
 
 /**
  * 主内容区：始终显示请求编辑器；收到响应时更新下方结果标签页并选中 Response 标签。
@@ -176,8 +176,8 @@ class MainContentPanel(
         requestEditorPanel.loadDraft(draft)
     }
 
-    fun addCurrentRequestToScript(targetScript: VirtualFile?): VirtualFile? =
-        requestEditorPanel.addCurrentRequestToScript(targetScript)
+    fun addCurrentRequestToScript(targetScript: VirtualFile?, onAdded: (VirtualFile) -> Unit) =
+        requestEditorPanel.addCurrentRequestToScript(targetScript, onAdded)
 
     /**
      * 脚本文件变更时调用：若当前编辑器正在显示该文件中的请求，则重新解析并刷新表单（脚本 ↔ UI 联动）

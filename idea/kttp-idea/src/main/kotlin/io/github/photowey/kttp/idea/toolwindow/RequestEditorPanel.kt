@@ -16,8 +16,8 @@
 
 package io.github.photowey.kttp.idea.toolwindow
 
-import com.intellij.openapi.Disposable
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
@@ -26,20 +26,21 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
-import org.jetbrains.kotlin.psi.KtFile
 import com.intellij.ui.components.JBScrollPane
+import io.github.photowey.kttp.idea.KttpUiActions
+import io.github.photowey.kttp.idea.cli.KttpCliInvocation
 import io.github.photowey.kttp.idea.env.KttpEnvironmentService
-import io.github.photowey.kttp.idea.gui.*
-import io.github.photowey.kttp.idea.script.KttpRequestDeclaration
-import io.github.photowey.kttp.idea.script.toKttpScript
 import io.github.photowey.kttp.idea.execution.KttpExecutionResult
 import io.github.photowey.kttp.idea.execution.RequestExecutionMode
 import io.github.photowey.kttp.idea.execution.ScriptRequestExecutor
-import io.github.photowey.kttp.idea.cli.KttpCliInvocation
+import io.github.photowey.kttp.idea.gui.*
 import io.github.photowey.kttp.idea.path.KttpConsolesPath
-import java.util.concurrent.TimeUnit
+import io.github.photowey.kttp.idea.script.KttpRequestDeclaration
+import io.github.photowey.kttp.idea.script.toKttpScript
 import java.awt.BorderLayout
+import java.util.concurrent.TimeUnit
 import javax.swing.JPanel
+import org.jetbrains.kotlin.psi.KtFile
 
 private val LOG = Logger.getInstance(RequestEditorPanel::class.java)
 
@@ -179,24 +180,23 @@ class RequestEditorPanel(
 
     /**
      * Commits active cell edits, then appends the editable request to a chosen or new script and persists its link.
-     * Returns null when validation or the guarded editor operation fails.
+     * The write-safe UI operation is skipped if the selection or draft changes before it starts.
      */
-    fun addCurrentRequestToScript(targetScript: VirtualFile?): VirtualFile? {
-        if (!form.commitPendingEdits()) return null
+    fun addCurrentRequestToScript(targetScript: VirtualFile?, onAdded: (VirtualFile) -> Unit) {
+        if (!form.commitPendingEdits()) return
         if (!session.editable) {
             Messages.showInfoMessage(
                 project,
                 "Detach this imported request before adding it to a script.",
                 "Request Is Read Only"
             )
-            return null
+            return
         }
         val draft = snapshot().copy(ownership = DraftOwnership.GUI_OWNED)
         if ((draft.request.target.url as? ValueRef.Literal)?.value?.isBlank() == true) {
             Messages.showInfoMessage(project, "Enter a URL before adding this request to a script.", "URL Required")
-            return null
+            return
         }
-        var result: VirtualFile? = null
         editorOperation("Cannot Add Request") {
             val file = scripts.append(draft, targetScript)
             val linked = draft.copy(
@@ -213,12 +213,10 @@ class RequestEditorPanel(
             currentSourceFile = null
             currentDeclarationIndex = null
             applyDraftState()
-            scripts.open(file.path)
             onScriptFileChanged?.invoke(file)
             onDraftsChanged?.invoke()
-            result = file
+            onAdded(file)
         }
-        return result
     }
 
     override fun dispose() {
@@ -384,19 +382,28 @@ class RequestEditorPanel(
         activeCancellation = cancellation
         headerPanel.requestProgress.start(session.draft.executionMode)
         updateSendButton()
-        try {
-            launchDraftRequest(started, cancellation)
-        } catch (failure: Exception) {
-            activeCancellation = null
-            headerPanel.requestProgress.finish()
-            updateSendButton()
-            onResponseReceived(
-                KttpExecutionResult(
-                    session.draft.title, false, failure.message ?: "Cannot prepare request",
-                    executionMode = session.draft.executionMode,
-                    totalTimeMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)
-                ), session.linkedScriptPath
-            )
+        val draftId = session.draft.id
+        val revision = session.revision
+        KttpUiActions.submit(project) {
+            if (disposed || activeCancellation !== cancellation) return@submit
+            try {
+                check(session.draft.id == draftId && session.revision == revision) {
+                    "The request changed before execution started. Send it again."
+                }
+                check(!cancellation.isCancelled) { "Request cancelled" }
+                launchDraftRequest(started, cancellation)
+            } catch (failure: Exception) {
+                activeCancellation = null
+                headerPanel.requestProgress.finish()
+                updateSendButton()
+                onResponseReceived(
+                    KttpExecutionResult(
+                        session.draft.title, false, failure.message ?: "Cannot prepare request",
+                        executionMode = session.draft.executionMode,
+                        totalTimeMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)
+                    ), session.linkedScriptPath
+                )
+            }
         }
     }
 
@@ -496,12 +503,17 @@ class RequestEditorPanel(
     }
 
     private fun editorOperation(title: String, action: () -> Unit) {
-        try {
-            action()
-        } catch (e: Exception) {
-            LOG.warn(title, e)
-            Messages.showErrorDialog(project, e.message ?: title, title)
-            applyDraftState()
+        val draftId = session.draft.id
+        val revision = session.revision
+        KttpUiActions.submit(project) {
+            if (disposed || session.draft.id != draftId || session.revision != revision) return@submit
+            try {
+                action()
+            } catch (e: Exception) {
+                LOG.warn(title, e)
+                Messages.showErrorDialog(project, e.message ?: title, title)
+                applyDraftState()
+            }
         }
     }
 }
