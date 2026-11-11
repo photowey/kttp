@@ -16,6 +16,7 @@
 
 package io.github.photowey.kttp.idea.toolwindow
 
+import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.github.photowey.kttp.idea.execution.RequestExecutionMode
 import io.github.photowey.kttp.idea.gui.GuiDraftService
@@ -44,6 +45,11 @@ class RequestExecutionModesTest : BasePlatformTestCase() {
         assertEquals(RequestExecutionMode.QUICK_REQUEST, combo.selectedItem)
         combo.selectedItem = RequestExecutionMode.FOLLOW_SCRIPT
         button(editor, "Save Draft").doClick()
+        PlatformTestUtil.waitWithEventsDispatching(
+            "execution mode is saved",
+            { service.findDraft(draft.id)?.executionMode == RequestExecutionMode.FOLLOW_SCRIPT },
+            10
+        )
         assertEquals(RequestExecutionMode.FOLLOW_SCRIPT, service.findDraft(draft.id)!!.executionMode)
         service.deleteDraft(draft.id)
     }

@@ -52,6 +52,11 @@ class RequestFeedbackLayoutTest : BasePlatformTestCase() {
         editor.onScriptFileChanged = { error("preparation-stopped") }
         val header = descendants(editor).filterIsInstance<ComposerHeaderPanel>().single()
         header.sendButton.doClick()
+        PlatformTestUtil.waitWithEventsDispatching(
+            "preparation failure is reported",
+            { response.get() != null },
+            10
+        )
         assertEquals("preparation-stopped", response.get().message)
         assertEquals("Send", header.sendButton.text)
         assertTrue(header.sendButton.isEnabled)

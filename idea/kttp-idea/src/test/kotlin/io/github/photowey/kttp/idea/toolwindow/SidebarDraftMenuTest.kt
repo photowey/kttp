@@ -22,6 +22,7 @@ import com.intellij.openapi.ui.TestDialogManager
 import com.intellij.openapi.ui.TestInputDialog
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.util.ui.UIUtil
 import io.github.photowey.kttp.idea.gui.GuiDraft
 import io.github.photowey.kttp.idea.gui.GuiDraftService
 import io.github.photowey.kttp.idea.gui.HeaderSpec
@@ -160,6 +161,7 @@ class SidebarDraftMenuTest : BasePlatformTestCase() {
 
     private fun clickSave(editor: RequestEditorPanel) {
         descendants(editor).filterIsInstance<JButton>().single { it.text == "Save Draft" }.doClick()
+        UIUtil.dispatchAllInvocationEvents()
     }
 
     private fun waitForDraft(sidebar: CollectionsSidebar, id: String, predicate: (GuiDraft) -> Boolean = { true }) {

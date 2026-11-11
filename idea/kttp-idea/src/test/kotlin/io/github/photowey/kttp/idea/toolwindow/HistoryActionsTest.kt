@@ -19,6 +19,7 @@ package io.github.photowey.kttp.idea.toolwindow
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.github.photowey.kttp.idea.io.HistoryPersistence
 import java.awt.event.MouseEvent
@@ -37,6 +38,7 @@ class HistoryActionsTest : BasePlatformTestCase() {
     fun testDoubleClickOpensAResponseCreatedOutsideVfs() = withFreshResponse { panel, list, file ->
         click(list, 2)
 
+        waitForOpenFile(file)
         assertTrue(FileEditorManager.getInstance(project).openFiles.any { it.path == file.path })
         assertEquals(file.absolutePath, panel.getSelectedResponseFilePath())
         assertEquals(file.absolutePath, HistoryPersistence.load().last().responseFilePath)
@@ -50,6 +52,7 @@ class HistoryActionsTest : BasePlatformTestCase() {
             click(list, 2)
         }
 
+        waitForOpenFile(file)
         assertTrue(FileEditorManager.getInstance(project).openFiles.any { it.path == file.path })
     }
 
@@ -104,6 +107,14 @@ class HistoryActionsTest : BasePlatformTestCase() {
             HistoryPersistence.append(previous)
             directory.deleteRecursively()
         }
+    }
+
+    private fun waitForOpenFile(file: File) {
+        PlatformTestUtil.waitWithEventsDispatching(
+            "response file opens in editor",
+            { FileEditorManager.getInstance(project).openFiles.any { it.path == file.path } },
+            10
+        )
     }
 
     private fun click(list: JList<*>, count: Int) {
