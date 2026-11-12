@@ -39,7 +39,9 @@ internal class RequestEditorFormMapper(
         header.executionModeCombo.selectedItem = draft.executionMode
         header.titleField.text = draft.title
         header.requestNameField.text = spec.identity.name.orEmpty()
-        header.methodComboBox.selectedItem = spec.method.value
+        header.methodComboBox.model.selectedItem =
+            if (draft.bridge.mode == GuiMode.SCRIPT_ONLY && draft.bridge.gaps.any { it.location == "method" })
+                "Script" else spec.method.value
         header.urlField.text = GuiValueRefCodec.toDisplayValue(spec.target.url)
         params.setParamEntries(spec.target.queryParams.map { it.name to GuiValueRefCodec.toDisplayValue(it.value) })
         headers.setHeaderEntries(spec.headers.map { it.name to GuiValueRefCodec.toDisplayValue(it.value) })

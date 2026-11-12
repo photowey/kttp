@@ -17,7 +17,9 @@
 package io.github.photowey.kttp.idea.toolwindow
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.ui.JBSplitter
+import com.intellij.util.ui.JBUI
 import java.awt.Component
 import java.awt.Container
 import javax.swing.JTabbedPane
@@ -30,6 +32,41 @@ import javax.swing.JTabbedPane
  * @since 2026/11/07
  */
 class WorkspaceLayoutTest : BasePlatformTestCase() {
+    fun testInitialNavigationWidthTracksOpeningSizeUntilTheUserResizes() {
+        val key = "Kttp.Tests.Navigation.${System.nanoTime()}"
+        val settings = PropertiesComponent.getInstance()
+        val split = WorkspaceUi.split(false, key, 0.22f, javax.swing.JPanel(), javax.swing.JPanel(), 300)
+        try {
+            for (width in listOf(900, 1200)) {
+                split.setSize(JBUI.scale(width), 600)
+                split.doLayout()
+                assertTrue(kotlin.math.abs(split.firstComponent.width - JBUI.scale(300)) <= 2)
+            }
+            assertFalse("Automatic sizing must not overwrite a user layout preference", settings.isValueSet(key))
+            split.proportion = 0.4f
+            split.setSize(JBUI.scale(1400), 600)
+            split.doLayout()
+            assertEquals(0.4f, split.proportion)
+            assertTrue(settings.isValueSet(key))
+        } finally {
+            settings.unsetValue(key)
+        }
+    }
+
+    fun testSavedNavigationProportionTakesPrecedenceOverTheInitialWidth() {
+        val key = "Kttp.Tests.Navigation.${System.nanoTime()}"
+        val settings = PropertiesComponent.getInstance()
+        settings.setValue(key, 0.45f, 0.22f)
+        try {
+            val split = WorkspaceUi.split(false, key, 0.22f, javax.swing.JPanel(), javax.swing.JPanel(), 300)
+            split.setSize(1200, 600)
+            split.doLayout()
+            assertEquals(0.45f, split.proportion)
+        } finally {
+            settings.unsetValue(key)
+        }
+    }
+
     fun testEveryWorkspaceBoundaryCanResizeWithoutHonoringEditorMinimums() {
         val panel = KttpToolWindowPanel(project)
         panel.setSize(1280, 900)

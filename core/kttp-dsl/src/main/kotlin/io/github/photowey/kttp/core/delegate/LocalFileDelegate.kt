@@ -144,7 +144,6 @@ fun createLocalFile(
  *
  * This function is available in Kttp scripts via default imports.
  */
-@KttpDSL
 fun localFile(
     path: String,
     charset: Charset = StandardCharsets.UTF_8,

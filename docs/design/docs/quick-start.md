@@ -2,8 +2,9 @@
 
 ## Install the IDEA plugin
 
-Use JDK 21 for development. The plugin targets IntelliJ IDEA 2025.3.2 and depends on the Kotlin plugin and the platform
-language/JSON modules declared in `plugin.xml`.
+Use JDK 25 for development. The plugin targets IntelliJ IDEA 2026.3 and depends on the Kotlin plugin and the platform
+language/JSON modules declared in `plugin.xml`. Kttp 1.1.0 declares builds `263.0` through `263.*`; use a compatible
+older plugin such as Kttp 1.0.1 for earlier IDE versions.
 
 When a [GitHub Release](https://github.com/photowey/kttp/releases) is available, download its
 `kttp-idea-X.Y.Z.zip`. In IDEA, open **Settings → Plugins → Install Plugin from Disk…**, select the ZIP and follow
@@ -21,7 +22,7 @@ Maven repository or home directory is required.
 
 ## Run your first script
 
-1. Configure a project JDK; JDK 21 is recommended.
+1. Configure a project JDK; JDK 21 or 25 is recommended.
 2. Choose **File → New → Kttp Script**. The new file is created under
    **Scratches and Consoles → Consoles → Kttp**. A project-local `.kttp.kts` file also works.
 3. Replace the file contents with this script:
@@ -45,8 +46,9 @@ selection; use the gutter Run icon when selecting one request.
 
 ## Send from the GUI
 
-Open **View → Tool Windows → Kttp** and click **New Draft**. Choose `GET`, enter
-`https://httpbin.org/get`, keep **Quick Request** selected, and click **Send**.
+Open **View → Tool Windows → Kttp** and click **New Draft**. The draft already contains `GET https://httpbin.org/get`,
+query `source=kttp` and header `Accept: application/json`. Review or change the example, keep **Quick Request** selected,
+and click **Send**. Opening a draft does not send or save it.
 
 Use **Save Draft** to keep the request. **Generate Script** writes a linked `.kttp.kts` file and saves the draft.
 Switch to **Follow Script** to run in script context. Requests selected from an existing script default to Follow Script

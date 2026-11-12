@@ -2,7 +2,7 @@
 
 ## Local development
 
-Import the repository root as a Gradle project and use JDK 21. The Gradle Wrapper pins Gradle 8.13 and checks the
+Import the repository root as a Gradle project and use JDK 25. The Gradle Wrapper pins Gradle 9.7.0 and checks the
 official distribution's SHA-256. Keep machine-specific settings in your own `~/.gradle/gradle.properties`.
 
 ```bash
@@ -13,8 +13,8 @@ official distribution's SHA-256. Keep machine-specific settings in your own `~/.
 ```
 
 `runIde` starts a development IDEA with the plugin installed. Its sandbox is under
-`idea/kttp-idea/build/idea-sandbox/`. The build targets IDEA 2025.3.2, `sinceBuild=253.0`. Core JVM bytecode targets
-and the plugin's JDK 21 target are configured separately. Compatibility with every IDE product and third-party theme
+`idea/kttp-idea/build/idea-sandbox/`. The build targets IDEA 2026.3, `sinceBuild=263.0`. Core JVM bytecode targets
+and the plugin's Java 25 bytecode target are configured separately. Compatibility with every IDE product and third-party theme
 has not been verified.
 
 ## Documentation

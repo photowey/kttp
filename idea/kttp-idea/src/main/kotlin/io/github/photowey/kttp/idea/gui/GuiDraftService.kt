@@ -70,6 +70,17 @@ class GuiDraftService(private val project: Project) {
         )
     }
 
+    /** Creates an unsaved example request for the GUI; existing drafts and imported scripts are unaffected. */
+    fun createNewDraft(): GuiDraft = createEmptyDraft().copy(
+        request = RequestSpec(
+            target = RequestTarget(
+                ValueRef.Literal("https://httpbin.org/get"),
+                queryParams = listOf(NameValueRef("source", ValueRef.Literal("kttp")))
+            ),
+            headers = listOf(HeaderSpec("Accept", ValueRef.Literal("application/json")))
+        )
+    )
+
     /**
      * Persists an immutable GUI-owned snapshot and clears its dirty flag.
      * The cache changes only after the archive is successfully written; persistence failures propagate.

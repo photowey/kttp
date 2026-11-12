@@ -77,7 +77,7 @@ class DefaultExecutionStrategy : KttpExecutionStrategy {
         requestExecutable: ResultExecutable<Response>,
         mapFunction: MapFunction<Response, R>
     ): MappedRequestHolder<R> {
-        return _root_ide_package_.io.github.photowey.kttp.core.context.execution.result.MappedRequestHolder(
+        return MappedRequestHolder(
             context,
             requestExecutable,
             mapFunction
@@ -106,7 +106,7 @@ class CurlExecutionStrategy : KttpExecutionStrategy {
         requestExecutable: ResultExecutable<Response>,
         mapFunction: MapFunction<Response, R>
     ): MappedRequestHolder<R> {
-        return _root_ide_package_.io.github.photowey.kttp.core.context.execution.result.MappedRequestHolder(
+        return MappedRequestHolder(
             context,
             DummyRequestHolder,
             mapFunction

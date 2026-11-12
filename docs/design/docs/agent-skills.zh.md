@@ -4,6 +4,12 @@
 包括脚本执行与 Quick Request 的区别。
 安装 Skill 不会安装 IDEA 插件、CLI 或 JDK。
 
+这些说明对应 Kttp 1.1.0：IDEA 2026.3（构建号 `263.0` 至 `263.*`），开发使用 JDK 25，
+脚本执行推荐使用 JDK 21 或 25。内容包含原生请求结果委托、cURL 导出边界和自定义方法的 Follow Script 执行。
+使用旧运行时时，应先核对其 API，再采用与版本相关的说明。
+
+Agent 可以根据该 Skill 将粘贴的 cURL 转换为 Kotlin 源码；1.1.0 插件没有 cURL 导入界面。
+
 ## 从 GitHub 安装
 
 安装 Node.js 和 npm，Node.js 版本须满足 Skills CLI 的要求。仓库发布后运行：

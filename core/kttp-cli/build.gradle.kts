@@ -41,10 +41,17 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
 
     manifest {
         attributes["Main-Class"] = cliMainClass
+        attributes["Implementation-Version"] = project.version.toString().removeSuffix("-SNAPSHOT")
+        attributes["Enable-Native-Access"] = "ALL-UNNAMED"
     }
 
-    // Merge service files to avoid conflicts between kotlin-compiler and kotlin-reflect
+    // Transformers must see every service/metadata file; ordinary duplicate entries stay excluded.
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     mergeServiceFiles()
+    filesMatching(listOf("META-INF/services/**", "META-INF/*.kotlin_module")) {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
+    failOnDuplicateEntries = true
 
     // Exclude duplicate signatures
     exclude("META-INF/*.SF")

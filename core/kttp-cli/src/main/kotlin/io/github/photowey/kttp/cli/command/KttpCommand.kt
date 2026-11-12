@@ -61,6 +61,10 @@ import kotlin.system.exitProcess
  */
 class KttpCommand : CliktCommand("kttp") {
 
+    init {
+        versionOption(getVersion(), names = setOf("--version", "-v")) { "Kttp CLI version $it" }
+    }
+
     val script by option(help = "Script file path")
         .file(mustExist = true, canBeDir = false, mustBeReadable = true)
         .required()
@@ -112,11 +116,6 @@ class KttpCommand : CliktCommand("kttp") {
     val jvmTarget by option(help = "JVM target version for compilation")
         .default("1.8")
 
-    val version by option(
-        names = arrayOf("--version", "-v"),
-        help = "Show version"
-    ).flag(default = false)
-
     val jsonOutput by option(
         names = arrayOf("--json-output", "-j"),
         help = "Output result as JSON (for IDE integration)"
@@ -146,11 +145,6 @@ class KttpCommand : CliktCommand("kttp") {
      * Response tracking is reset before each invocation and context cleanup runs before output.
      */
     override fun run() {
-        if (version) {
-            println("Kttp CLI version ${getVersion()}")
-            return
-        }
-
         val timingCurl = executionMode == ExecutionMode.CURL
         val t0 = if (timingCurl) System.currentTimeMillis() else 0L
 
@@ -185,7 +179,7 @@ class KttpCommand : CliktCommand("kttp") {
         val (environmentStore, _) = createEnvironmentStore()
         val storage = storageDir?.let { defaultStorage(it.toPath()) } ?: InMemoryStorage()
         val cookiesContext = cookiesFile?.let { CookiesContextImpl(it.toPath()) } ?: NoopCookiesContext
-        val printer = if (jsonOutput) NoopPrinter else SystemOutPrinter
+        val printer = if (jsonOutput || executionMode == ExecutionMode.CURL) NoopPrinter else SystemOutPrinter
         return createKttpContext(
             storage = storage,
             environmentStore = environmentStore,
@@ -209,13 +203,9 @@ class KttpCommand : CliktCommand("kttp") {
             responseManifest?.appendText(Json.encodeToString(File(filePath).absolutePath) + "\n")
             snapshot?.publish()
         },
-        curlMode = executionMode == ExecutionMode.CURL,
         onResponsePreview = snapshot?.let { checkpoint ->
             { response -> checkpoint.publishPreview(response, LastResponseHolder.request.get()) }
-        },
-        curlOutput = if (executionMode == ExecutionMode.CURL) {
-            { println(it) }
-        } else null
+        }
     )
 
     private fun evaluateScript(context: KttpContext, responseDirPath: Path, startedAt: Long): CliExecutionResult {

@@ -3,6 +3,25 @@
 打开 **View → Tool Windows → Kttp**。侧栏列出草稿、脚本和响应文件；主区域包含请求编辑器，
 以及 **Response**、**History** 和 **Assertions** 视图。
 
+新建 GUI 请求默认包含下面的可编辑示例，点击 **Send** 后才会发送：
+
+```kotlin
+GET("https://httpbin.org/get") {
+    query("source", "kttp")
+    header("Accept", "application/json")
+}
+```
+
+**Sources** 的分组对应不同的存储范围：
+
+- **Drafts**：已保存的 GUI 请求。打开脚本不会自动创建已保存草稿。
+- **Project**：当前项目及其模块内容根下的 `.kttp.kts` 脚本，不限于 `.kttp/`；
+  IDEA 排除的目录和版本控制忽略的文件不参与扫描。
+- **Kttp**：当前运行的 IDE 配置目录 `consoles/Kttp/` 下的脚本。其他 IDEA 安装或开发沙箱可能使用不同的配置目录。
+
+在项目中首次打开时，Kttp 会在 IDE 可用宽度内展开过窄的停靠工具窗口，并为导航区设置初始宽度。
+之后手动调整的窗口大小和保存的分隔条比例优先。
+
 ## 执行模式
 
 | 模式 | 执行内容 | 默认适用对象 |
@@ -50,6 +69,9 @@ GUI 环境引用要求 `${env:baseUrl}` 占据整个字段，不支持 `${env:ba
   悬停可查看编辑限制和省略的行为，需要这些行为时使用 Follow Script。
 - **Script required**（需要脚本执行）：必须使用 Follow Script，仍可从 GUI 执行。
 
+`request("CUSTOM", url)` 等自定义方法使用 Follow Script。编辑器无法表示该方法时，方法栏显示 **Script**；
+该请求不能使用 Quick Request、Detach 或 GUI 脚本生成。
+
 这些标签不代表当前执行模式。**Quick support** 过滤器按完整提取、仅 HTTP 数据、需要脚本执行和混合类别
 筛选脚本文件，不会切换模式。搜索框按草稿标题或脚本文件名过滤。
 
@@ -94,4 +116,5 @@ GUI 环境引用要求 `${env:baseUrl}` 占据整个字段，不支持 `${env:ba
 Quick Request 跳过这些阶段。
 
 **HTTP/2** 复选框选择 `H2_PRIOR_KNOWLEDGE`，不是自动协商 HTTP/2。
-HTTP 文件和 Postman 导入操作仍是占位功能。直接 GUI 模型不能保留的行为见 [Kotlin 脚本](scripting.md)。
+HTTP 文件和 Postman 导入操作仍是占位功能，1.1.0 尚未实现 cURL 导入。
+直接 GUI 模型不能保留的行为见 [Kotlin 脚本](scripting.md)。

@@ -34,7 +34,7 @@ tasks.jar {
 }
 
 val versionResources = layout.buildDirectory.dir("generated/resources/kttpVersion")
-val generateKttpVersion by tasks.registering(WriteProperties::class) {
+val generateKttpVersion = tasks.register<WriteProperties>("generateKttpVersion") {
     destinationFile.set(versionResources.map { it.file("kttp-version.properties") })
     property("version", project.version.toString())
 }

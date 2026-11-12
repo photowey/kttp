@@ -18,7 +18,7 @@ package io.github.photowey.kttp.idea.script
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import java.io.File
+import java.nio.file.Path
 import kotlin.script.experimental.api.with
 import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.host.ScriptingHostConfiguration
@@ -44,15 +44,15 @@ class KttpScriptDefinitionsProvider(private val project: Project) : kotlin.scrip
         return listOf("io.github.photowey.kttp.script.Kttp")
     }
 
-    override fun getDefinitionsClassPath(): Iterable<File> {
+    override fun getTemplateClasspath(): Iterable<Path> {
         // Return empty in unit test mode
         if (ApplicationManager.getApplication().isUnitTestMode) {
             return emptyList()
         }
-        return KttpScriptRunUtils.getKttpRunnerJars()
+        return KttpScriptRunUtils.getKttpRunnerJars().map { it.toPath() }
     }
 
-    /** Supplies editor dependencies through the script configuration on both old and new Kotlin plugins. */
+    /** Supplies editor dependencies and repairs installed library roots for the active Kotlin script definition. */
     override fun provideDefinitions(
         baseHostConfiguration: ScriptingHostConfiguration,
         loadedScriptDefinitions: List<ScriptDefinition>

@@ -22,6 +22,7 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.ContentFactory
 import io.github.photowey.kttp.idea.toolwindow.KttpToolWindowPanel
+import io.github.photowey.kttp.idea.toolwindow.KttpToolWindowLayout
 import java.awt.BorderLayout
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -49,6 +50,9 @@ class KttpToolWindowFactory : ToolWindowFactory {
             ContentFactory.getInstance().createContent(fallback, "", false)
         }
         toolWindow.contentManager.addContent(content)
+        if (content.component is KttpToolWindowPanel) {
+            KttpToolWindowLayout.install(project, toolWindow, content.component)
+        }
     }
 
     /**

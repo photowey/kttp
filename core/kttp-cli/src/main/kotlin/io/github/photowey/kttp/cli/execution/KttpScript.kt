@@ -135,11 +135,19 @@ class KttpScript(
             }
 
             ExecutionMode.DEFAULT -> {
-                executeAndCapture(executionScenario)
+                captureExecutionFailure { context.executionContext.execute(executionScenario) }
             }
 
             ExecutionMode.CURL -> {
-                executeAndCapture(executionScenario)
+                captureExecutionFailure {
+                    LastResponseHolder.clear()
+                    try {
+                        CurlRequestRenderer(context).render(executionScenario)
+                    } finally {
+                        // Prerequisites may receive real responses; none is the exported request's response.
+                        LastResponseHolder.clear()
+                    }
+                }
             }
         }
         if (timingCurl) System.err.println("[KTTP_TIMING] script_execute_ms=${System.currentTimeMillis() - execStart}")
@@ -148,9 +156,9 @@ class KttpScript(
         return result
     }
 
-    private fun executeAndCapture(scenario: ExecutionScenario) {
+    private fun captureExecutionFailure(execute: () -> Unit) {
         try {
-            context.executionContext.execute(scenario)
+            execute()
         } catch (e: Throwable) {
             executionException = e
         }

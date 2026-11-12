@@ -80,6 +80,13 @@ class KttpScriptDependenciesTest : BasePlatformTestCase() {
             roots.single().findFileByRelativePath("io/github/photowey/kttp/script/Kttp.class"))
     }
 
+    fun testPathBasedTemplateClasspathRemainsIsolatedInUnitTests() {
+        val definitions = KttpScriptDefinitionsProvider(project)
+        assertTrue(definitions.getTemplateClasspath().none())
+        assertTrue(definitions.getDefinitionClasses().none())
+        assertFalse(definitions.useDiscovery())
+    }
+
     fun testLegacyFileRootsAreRepairedWithoutDeletingTheLibrary() {
         val jarFile = VfsUtil.findFileByIoFile(dslJar, true)!!
         val existing = createLibrary(jarFile.url)

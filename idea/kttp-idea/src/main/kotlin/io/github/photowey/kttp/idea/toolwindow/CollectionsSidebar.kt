@@ -44,6 +44,7 @@ import javax.swing.JPanel
 import javax.swing.JPopupMenu
 import javax.swing.SwingConstants
 import javax.swing.Timer
+import javax.swing.ToolTipManager
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
@@ -184,6 +185,7 @@ class CollectionsSidebar(
         emptyLabel.text = "Loading..."
 
         // 事件监听
+        ToolTipManager.sharedInstance().registerComponent(tree)
         setupTreeListeners()
         searchControls.search.addDocumentListener(object : javax.swing.event.DocumentListener {
             override fun insertUpdate(e: javax.swing.event.DocumentEvent?) = collectionRefreshTimer.restart()
@@ -201,11 +203,20 @@ class CollectionsSidebar(
             refreshResponseCollections()
         }
         Disposer.register(project, Disposable {
-            ApplicationManager.getApplication().invokeLater { collectionRefreshTimer.stop() }
+            ApplicationManager.getApplication().invokeLater {
+                collectionRefreshTimer.stop()
+                ToolTipManager.sharedInstance().unregisterComponent(tree)
+            }
         })
     }
 
     private fun setupFileChangeListener() {
+        project.messageBus.connect(project).subscribe(
+            com.intellij.openapi.vcs.changes.ChangeListListener.TOPIC,
+            object : com.intellij.openapi.vcs.changes.ChangeListListener {
+                override fun changeListUpdateDone() = refreshCollections()
+            }
+        )
         SidebarVfsListener(project, discovery, { invalidateCache(it) }, { file ->
             reloadFileNode(file)
             onScriptFileChanged(file)
@@ -452,8 +463,10 @@ class CollectionsSidebar(
      * @version 1.0.0
      * @since 2026/02/21
      */
-    internal enum class GroupNode(val displayName: String) {
-        DRAFTS("Drafts"), PROJECT("Project"), KTPP("Kttp");
+    internal enum class GroupNode(val displayName: String, val description: String) {
+        DRAFTS("Drafts", "GUI requests saved with Save Draft in this project. Opening a script does not create a draft."),
+        PROJECT("Project", "Scripts in this IDEA project's content roots, including modules. Excluded and VCS-ignored files are omitted."),
+        KTPP("Kttp", "Scripts in this IDEA installation's config/consoles/Kttp directory. Other IDE installations and development sandboxes have separate storage.");
 
         override fun toString(): String = displayName
     }

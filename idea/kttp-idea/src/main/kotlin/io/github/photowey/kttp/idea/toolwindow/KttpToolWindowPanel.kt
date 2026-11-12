@@ -20,6 +20,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
+import java.awt.Dimension
 import javax.swing.JPanel
 import javax.swing.JTabbedPane
 
@@ -91,9 +92,10 @@ class KttpToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         )
         rightPanel.add(contentWithTabs, BorderLayout.CENTER)
         border = JBUI.Borders.empty(8)
+        preferredSize = Dimension(JBUI.scale(1120), JBUI.scale(760))
         add(WorkspaceUi.split(
             false, "Kttp.Navigation.Proportion", 0.22f,
-            collectionsSidebar, rightPanel
+            collectionsSidebar, rightPanel, initialFirstWidth = 300
         ), BorderLayout.CENTER)
 
         showEmptyState()

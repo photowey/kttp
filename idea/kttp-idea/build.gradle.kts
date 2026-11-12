@@ -5,8 +5,8 @@ plugins {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 // Inherit platform interface defaults without generating obsolete compatibility bridges.
@@ -30,6 +30,7 @@ dependencies {
     intellijPlatform {
         intellijIdea(libs.versions.intellij.idea.asProvider())
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
+        testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Plugin.Java)
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.jetbrains.kotlin")
         bundledPlugin("com.intellij.modules.json")
@@ -41,6 +42,9 @@ configurations.named("testRuntimeClasspath") {
     exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
     exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
     exclude(group = "org.jetbrains.kotlin", module = "kotlin-compiler-embeddable")
+    // Use the Kotlin plugin's scripting API, just as the installed plugin does.
+    exclude(group = "org.jetbrains.kotlin", module = "kotlin-scripting-common")
+    exclude(group = "org.jetbrains.kotlin", module = "kotlin-scripting-jvm")
 }
 
 val cliJar = project(":core:kttp-cli").tasks.named<Jar>("shadowJar").flatMap { it.archiveFile }
@@ -65,12 +69,18 @@ intellijPlatform {
         }
 
         changeNotes = """
-            <p>Compatibility fixes for IntelliJ IDEA 2025.3 through 2026.3.</p>
+            <p>Kttp 1.1.0 targets IntelliJ IDEA 2026.3 (build 263).</p>
             <ul>
-              <li>Fix opening scripts and responses on newer IDE versions.</li>
-              <li>Supply script editor dependencies through the supported script definition API.</li>
-              <li>Remove obsolete Kotlin integration and internal plugin lookup APIs.</li>
-              <li>Use supported UI scheduling and move console file reveal to the response link context menu.</li>
+              <li>Target the IntelliJ Platform 263 SDK and Java 25.</li>
+              <li>Load script templates through the Path-based Kotlin scripting API.</li>
+              <li>Update the build toolchain and retain separate CLI runtime dependencies.</li>
+              <li>Improve initial GUI sizing, project script discovery and new-request examples.</li>
+              <li>Report the CLI version without requiring a script.</li>
+              <li>Fix sidebar request import and refresh access to PSI.</li>
+              <li>Export cURL without running the selected request's response callbacks.</li>
+              <li>Run custom HTTP methods from the GUI through Follow Script.</li>
+              <li>Support delegated request results without compatibility getters.</li>
+              <li>Update the bilingual guides and Agent Skill for this version.</li>
             </ul>
         """.trimIndent()
     }
@@ -147,7 +157,11 @@ tasks.register<Sync>("createPluginLib") {
         include { jarIncludePluginLib(it.name) }
         // Share scripting API types with the Kotlin plugin across extension-point calls.
         // Independent script execution keeps its own versions in kttp-lib/ and the CLI.
-        exclude { it.name.startsWith("kotlin-script") }
+        exclude {
+            it.name.startsWith("kotlin-script") || it.name.startsWith("kotlin-stdlib") ||
+                it.name.startsWith("kotlin-reflect") ||
+                it.name.startsWith("kotlinx-coroutines")
+        }
     }
 }
 

@@ -39,7 +39,8 @@ java -jar "$KTTP_CLI_JAR" \
 
 | 参数 | 含义 |
 | --- | --- |
-| `--script <file>` | 必填脚本文件 |
+| `--script <file>` | 执行或编译脚本时必填 |
+| `--version` / `-v` | 输出 CLI 版本后退出，无需提供脚本 |
 | `--request-name <name>` | 按显式请求名或委托属性坐标选择 |
 | `--request-number <n>` | 从零开始的注册索引，不同于 IDE 显示序号 |
 | `--env-file <json>` | 扁平 `Map<String, String>`，不是 IDEA 命名配置 |
@@ -49,7 +50,7 @@ java -jar "$KTTP_CLI_JAR" \
 | `--storage-dir <directory>` | 持久化值目录；省略时使用单进程内存存储 |
 | `--cookies-file <file>` | 持久化 Cookie 文件；省略时不维护会话 Cookie |
 | `--execution-mode COMPILE_ONLY` | 编译但不对脚本正文求值 |
-| `--execution-mode CURL` | 根据脚本请求生成 cURL，不通过 HTTP 发送；仍会执行 Kotlin 求值 |
+| `--execution-mode CURL` | 将选中请求导出为 cURL，跳过它们的 HTTP 发送和响应回调 |
 | `--no-compilation-cache` | 强制重新编译，不复用编译缓存 |
 | `--json-output` / `-j` | 输出最终结构化结果 |
 | `--debug-log` / `-d` | 启用调试日志 |
@@ -58,6 +59,10 @@ java -jar "$KTTP_CLI_JAR" \
 IDEA 集成还会传入 `--request-lines first:last`、响应清单和快照参数。
 源码行选择优先于有效的数字选择器，数字选择器优先于名称。常规 CLI 调用建议使用上表中的公开名称或序号参数。
 CLI 没有用于选择 IDEA 命名环境的 `--env` 开关。
+
+cURL 导出仍会对 Kotlin 求值并构建所选请求，保留应用拦截器配置，但不执行导出请求的
+`then` / `thenResponse` 回调、JSON 解码和断言。顶层脚本代码以及用于解析依赖值的前置请求仍可能执行并访问
+HTTP；导出不提供沙箱或离线保证。未指定请求选择器时，会导出每个未被忽略的 HTTP 注册项。
 
 ## 结果和错误
 

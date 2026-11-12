@@ -40,7 +40,8 @@ Dependency annotations such as `@file:DependsOn` may still resolve/download depe
 
 | Option | Meaning |
 | --- | --- |
-| `--script <file>` | Required script file |
+| `--script <file>` | Required for script execution or compilation |
+| `--version` / `-v` | Print the CLI version and exit; no script is required |
 | `--request-name <name>` | Select an explicit name or delegated-property coordinate |
 | `--request-number <n>` | Zero-based registration index; different from the IDE's displayed ordinal |
 | `--env-file <json>` | Flat `Map<String, String>`; not IDEA named profiles |
@@ -50,7 +51,7 @@ Dependency annotations such as `@file:DependsOn` may still resolve/download depe
 | `--storage-dir <directory>` | Persistent values; omitted means per-process in-memory storage |
 | `--cookies-file <file>` | Persistent cookie jar; omitted means no cookie session store |
 | `--execution-mode COMPILE_ONLY` | Compile without evaluating the script body |
-| `--execution-mode CURL` | Generate cURL without request HTTP transport; still evaluate Kotlin |
+| `--execution-mode CURL` | Export selected requests as cURL, skipping their HTTP transport and response callbacks |
 | `--no-compilation-cache` | Force compilation rather than reusing cached compilation |
 | `--json-output` / `-j` | Print a final structured result |
 | `--debug-log` / `-d` | Enable debug logging |
@@ -60,6 +61,11 @@ The IDE also passes `--request-lines first:last`, response manifest and response
 Source-line selection takes precedence over a valid numeric selector, which takes precedence over a name. For normal
 CLI use, prefer the public name or number selectors above. There is no `--env` switch for selecting an IDEA
 environment profile.
+
+cURL export still evaluates Kotlin and builds the selected requests, including their application interceptor
+configuration. It skips the exported requests' `then`/`thenResponse` callbacks, JSON decoding and assertions.
+Top-level script code and prerequisite requests needed to resolve values can still execute and use HTTP; export is
+not a sandbox or an offline guarantee. With no request selector, each unignored HTTP registration is exported.
 
 ## Results and failure handling
 

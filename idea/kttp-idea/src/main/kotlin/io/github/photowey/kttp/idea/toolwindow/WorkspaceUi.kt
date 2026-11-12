@@ -16,6 +16,7 @@
 
 package io.github.photowey.kttp.idea.toolwindow
 
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.ui.JBColor
 import com.intellij.ui.JBSplitter
 import com.intellij.util.ui.JBUI
@@ -43,8 +44,46 @@ internal object WorkspaceUi {
     }
 
     /** Proportions survive reopening; editor preferred/minimum sizes never prevent dragging. */
-    fun split(vertical: Boolean, key: String, proportion: Float, first: JComponent, second: JComponent): JBSplitter =
+    fun split(
+        vertical: Boolean, key: String, proportion: Float, first: JComponent, second: JComponent,
+        initialFirstWidth: Int? = null
+    ): JBSplitter =
         object : JBSplitter(vertical, key, proportion) {
+            private var initialWidthPending = initialFirstWidth != null
+            private var applyingDefaultWidth = false
+
+            override fun loadProportion() {
+                if (initialFirstWidth == null || PropertiesComponent.getInstance().isValueSet(key)) {
+                    initialWidthPending = false
+                    super.loadProportion()
+                }
+            }
+
+            override fun saveProportion() {
+                if (!applyingDefaultWidth) {
+                    initialWidthPending = false
+                    super.saveProportion()
+                }
+            }
+
+            override fun doLayout() {
+                if (initialWidthPending && width > dividerWidth) {
+                    if (PropertiesComponent.getInstance().isValueSet(key)) {
+                        loadProportion()
+                    } else {
+                        // Keep a useful initial width while the tool window opens; do not save automatic ratios.
+                        applyingDefaultWidth = true
+                        try {
+                            setProportion((JBUI.scale(requireNotNull(initialFirstWidth)).toFloat() /
+                                (width - dividerWidth)).coerceIn(0.22f, 0.38f))
+                        } finally {
+                            applyingDefaultWidth = false
+                        }
+                    }
+                }
+                super.doLayout()
+            }
+
             override fun paintChildren(g: Graphics) {
                 super.paintChildren(g)
                 if (!divider.isVisible) return

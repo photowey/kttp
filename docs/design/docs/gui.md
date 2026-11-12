@@ -3,6 +3,26 @@
 Open **View → Tool Windows → Kttp**. The sidebar lists drafts, scripts and response files. The main area contains
 the request composer and the **Response**, **History** and **Assertions** views.
 
+New GUI requests start with an editable example. Nothing is sent until you click **Send**:
+
+```kotlin
+GET("https://httpbin.org/get") {
+    query("source", "kttp")
+    header("Accept", "application/json")
+}
+```
+
+The **Sources** groups refer to different storage scopes:
+
+- **Drafts** contains saved GUI requests. Opening a script does not create a saved draft.
+- **Project** finds `.kttp.kts` scripts across the current project's content roots, including its modules. It is not
+  limited to `.kttp/`; IDE-excluded directories and files ignored by version control are omitted.
+- **Kttp** lists scripts in the running IDE's `consoles/Kttp/` directory. Another IDE installation or development sandbox
+  can use a different configuration directory.
+
+On first opening in a project, Kttp expands a narrow docked tool window within the available IDE width and gives the
+navigation a useful initial width. Later manual resizing and saved splitter proportions take precedence.
+
 ## Execution mode
 
 | Mode | What runs | Default for |
@@ -53,6 +73,9 @@ Script file rows show the total request count. Request labels describe Quick Req
   hover to see editing limits and omitted behavior, and use Follow Script when that behavior is needed.
 - **Script required** means the request needs Follow Script. It can still run from the GUI.
 
+Custom methods such as `request("CUSTOM", url)` use Follow Script. The composer shows **Script** for a method it
+cannot represent; Quick Request, detaching and GUI script generation remain unavailable for that request.
+
 These labels do not indicate the selected execution mode. The **Quick support** filter selects script files by full
 projection, HTTP-only projection, script-required or mixed categories without switching modes. The search box filters
 by draft title or script file name.
@@ -102,4 +125,5 @@ Follow Script can therefore take seconds to start and compile even when HTTP tim
 those phases.
 
 The **HTTP/2** checkbox selects `H2_PRIOR_KNOWLEDGE`, not automatic HTTP/2 negotiation. HTTP-file and Postman import
-actions are placeholders. See [Kotlin scripting](scripting.md) for behavior the direct GUI model cannot preserve.
+actions are placeholders; cURL import is not implemented in 1.1.0. See [Kotlin scripting](scripting.md) for behavior the
+direct GUI model cannot preserve.

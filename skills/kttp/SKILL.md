@@ -6,7 +6,8 @@ description: Use when writing, editing, explaining, or debugging Kttp .kttp.kts 
 # Kttp
 
 Create executable Kotlin HTTP scripts for Kttp's IntelliJ IDEA plugin or standalone CLI. Answer in the user's language.
-This skill targets the `.kttp.kts` API; use an existing project's runtime and conventions when they differ.
+This skill describes Kttp 1.1.0's `.kttp.kts` API and IDEA 2026.3 integration. Check an existing project's runtime
+version before using version-specific behavior.
 
 ## Start with the request
 
@@ -47,8 +48,8 @@ a source checkout is not required.
   interpolation, such as `"$baseUrl/users"`, in scripts.
 - Use `GET(url, name = "read-user") { ... }`; `name` is an argument of the request function, not a builder property.
 - Request calls register holders. Their builder blocks and HTTP calls normally run in the execution phase. Reading a
-  delegated request result can execute a prerequisite. Use the login recipe, including its current-runtime delegate
-  compatibility getter; direct holder execution is internal.
+  delegated request result can execute a prerequisite. Kttp 1.1.0 supports these properties directly; no compatibility
+  `getValue` extension is needed. Use the login recipe; direct holder execution is internal.
 - `.then { ... }` receives `ThenContext`. Use `assertStatus`, `decode<T>`, `body`, or `getResponse()`. It is not an
   infix call and has no `assert { status(...) }` DSL.
 - `.thenResponse { ... }` receives OkHttp `Response`; use `code` or `requireStatus`. Do not assume the same callback
@@ -59,6 +60,8 @@ a source checkout is not required.
   JSON or escape interpolated values.
 - Follow Script runs the script and its callbacks. Quick Request sends a GUI projection and skips script evaluation,
   global script configuration, and `then`. Use Follow Script when the script's behavior matters.
+- cURL export skips the exported request's transport and response callbacks. Top-level Kotlin and prerequisite
+  requests may still run. Translating pasted cURL with this skill produces source; the plugin has no cURL import UI.
 
 ## Produce and verify
 

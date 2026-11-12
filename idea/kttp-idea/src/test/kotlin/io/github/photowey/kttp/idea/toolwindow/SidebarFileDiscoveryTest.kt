@@ -17,7 +17,9 @@
 package io.github.photowey.kttp.idea.toolwindow
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.fixtures.impl.TempDirTestFixtureImpl
@@ -27,7 +29,7 @@ import java.io.File
 import java.util.concurrent.Callable
 
 /**
- * Verifies response discovery sees files saved or deleted outside the IDE's VFS.
+ * Verifies project script scope and response files saved or deleted outside the IDE's VFS.
  *
  * @author photowey
  * @version 1.0.0
@@ -35,6 +37,31 @@ import java.util.concurrent.Callable
  */
 class SidebarFileDiscoveryTest : BasePlatformTestCase() {
     override fun createTempDirTestFixture() = TempDirTestFixtureImpl()
+
+    override fun setUp() {
+        super.setUp()
+        // Disk-backed response tests also need their files registered as module content.
+        ModuleRootModificationUtil.addContentRoot(module, myFixture.tempDirFixture.tempDirPath)
+    }
+
+    fun testProjectScriptsAreNotRestrictedToTheKttpStorageDirectory() {
+        val script = myFixture.addFileToProject("requests/api.kttp.kts", "GET(\"https://example.com\")").virtualFile
+        assertTrue(SidebarFileDiscovery(project).scripts().project.contains(script))
+    }
+
+    fun testExcludedBuildArtifactsDoNotAppearAsProjectScripts() {
+        val script = myFixture.addFileToProject("requests/api.kttp.kts", "GET(\"https://example.com\")").virtualFile
+        val generated = myFixture.addFileToProject("build/idea-sandbox/generated.kttp.kts", "GET(\"https://example.com\")")
+            .virtualFile
+        ModuleRootModificationUtil.updateModel(module) { model ->
+            model.contentEntries.single { entry ->
+                entry.file?.let { VfsUtilCore.isAncestor(it, generated, false) } == true
+            }.addExcludeFolder(generated.parent.parent.url)
+        }
+        val files = SidebarFileDiscovery(project).scripts().project
+        assertTrue(files.contains(script))
+        assertFalse("Excluded sandbox scripts must not leak into Project", files.contains(generated))
+    }
 
     fun testDiscoversProjectResponseSavedAfterDirectoryWasCached() {
         verifyNewResponse(KttpProjectPath.getResponsesDir(requireNotNull(project.basePath)), false)

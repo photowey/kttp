@@ -43,7 +43,7 @@ See the [execution rules](gui.md) before switching modes.
 
 ## Current scope
 
-The plugin targets IntelliJ IDEA 2025.3.2 with `sinceBuild=253.0`. Use JDK 21 for development; it is also recommended
+The plugin targets IntelliJ IDEA 2026.3 with `sinceBuild=263.0`. Use JDK 25 for development; JDK 21 or 25 is recommended
 for script execution. Other IDE products and third-party themes have not been independently verified. HTTP-file and
 Postman import actions are placeholders.
 

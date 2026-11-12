@@ -21,11 +21,12 @@ CI、Pages 设置和发布清单见[开发与发布](docs/design/docs/developmen
 
 ## 本地构建与安装
 
-插件以 IntelliJ IDEA **2025.3.2** 为构建目标，设置 `sinceBuild=253.0`，依赖 Kotlin 插件及
-`plugin.xml` 中声明的平台语言和 JSON 模块。其他 IDE 产品尚未单独验证。
-开发使用 JDK 21；执行脚本需要配置项目 JDK，推荐使用 JDK 21。
+Kttp 1.1.0 以 IntelliJ IDEA **2026.3** 为构建目标，设置 `sinceBuild=263.0` 和 `untilBuild=263.*`，
+依赖 Kotlin 插件及 `plugin.xml` 中声明的平台语言和 JSON 模块。较早的 IDEA 需要使用 Kttp 1.0.1 等兼容旧版。
+其他 IDE 产品尚未单独验证。
+开发使用 JDK 25；执行脚本需要配置项目 JDK，推荐使用 JDK 21 或 25。
 
-Gradle Wrapper 从官方 HTTPS 地址下载 Gradle 8.13，并校验 SHA-256。
+Gradle Wrapper 从官方 HTTPS 地址下载 Gradle 9.7.0，并校验 SHA-256。
 首次构建需要联网下载 Gradle、依赖和 IntelliJ Platform，不需要配置开发者个人的 Maven 仓库或主目录。
 
 依赖通过 Maven Central 和 Gradle Plugin Portal 解析；IntelliJ Platform 依赖使用平台插件的默认仓库。
@@ -82,9 +83,14 @@ Kttp 的 **Response** 标签页显示最近一次 GUI Send 的结果。
 `then` 代码块的接收者是 `ThenContext`，可调用 `assertStatus`、`decode`、`getResponse` 等方法。
 如果需要以 `Response` 为接收者，请使用 `thenResponse`。
 
+通过编辑器的 **+ → Custom request** 可插入 `request("CUSTOM", url) { ... }` 模板。
+**Copy as cURL** 导出光标所在请求，无法定位时回退到第一个请求。导出会跳过所选请求的 HTTP 发送和响应回调，
+但顶层 Kotlin 和前置依赖请求仍可能执行。执行边界见 [CLI 参考](docs/design/docs/cli.zh.md)。
+
 ## GUI 执行模式
 
-打开 **View → Tool Windows → Kttp**，点击 **New Draft** 创建草稿，填写 URL，并选择执行模式：
+打开 **View → Tool Windows → Kttp**，点击 **New Draft** 创建草稿。默认示例使用 `https://httpbin.org/get`，
+带有 `source=kttp` 查询参数和 `Accept: application/json` 请求头。修改示例并选择执行模式，点击 **Send** 后才会发送：
 
 | 模式                          | 执行方式                                                                                       | 适用场景                                         |
 |-------------------------------|------------------------------------------------------------------------------------------------|--------------------------------------------------|
@@ -186,7 +192,7 @@ npx skills add . --skill kttp
 
 - Quick Request 只发送 GUI 能够表示的 HTTP 数据，需要 Kotlin 脚本行为时请使用 Follow Script。
 - Quick Request 的整体调用超时为 60 秒，不维护持久化 Cookie 存储。
-- HTTP 文件和 Postman 导入操作目前是占位功能。
+- HTTP 文件和 Postman 导入操作目前是占位功能；cURL 导入尚未实现。
 - `http2()` / **HTTP/2** 复选框选择的是 OkHttp 的 `H2_PRIOR_KNOWLEDGE` 模式，并非自动协商 HTTP/2 的开关。
 - 尚未逐一验证所有 IDE 产品和第三方主题的兼容性。
 

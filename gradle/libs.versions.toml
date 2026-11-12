@@ -1,8 +1,8 @@
 [versions]
-kotlin = "2.2.20"
-intellij-platform = "2.11.0"
-intellij-idea = "2025.3.2"
-intellij-idea-since-build = "253.0"
+kotlin = "2.4.21"
+intellij-platform = "2.20.1"
+intellij-idea = "2026.3"
+intellij-idea-since-build = "263.0"
 
 okhttp = "4.12.0"
 kotlinx-serialization = "1.7.3"
@@ -13,7 +13,7 @@ jsonpath = "2.10.0"
 ok2curl = "0.8.0"
 clikt = "5.0.1"
 slf4j = "2.0.7"
-shadow = "8.1.1"
+shadow = "9.6.1"
 assertj = "3.24.2"
 junit4 = "4.13.2"
 
@@ -46,4 +46,4 @@ slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 intellij-platform = { id = "org.jetbrains.intellij.platform", version.ref = "intellij-platform" }
-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }

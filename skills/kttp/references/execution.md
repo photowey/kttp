@@ -5,8 +5,9 @@ Contents: [runtime](#runtime), [CLI](#cli), [IDEA](#idea), [GUI modes](#gui-mode
 ## Runtime
 
 The skill is usable without the Kttp source checkout. Execution still needs either the installed IDEA plugin or a
-standalone Kttp CLI fat JAR, plus a compatible JDK. Use the user's existing runtime and version. The current plugin
-targets IDEA 2025.3.2; JDK 21 is the recommended development and script runtime.
+standalone Kttp CLI fat JAR, plus a compatible JDK. Kttp 1.1.0 targets IDEA 2026.3 and declares builds `263.0` through
+`263.*`; earlier IDEs need a compatible older plugin such as Kttp 1.0.1. Development uses JDK 25; JDK 21 or 25 is
+recommended for script execution. Check the user's actual runtime version before applying these instructions.
 
 - Installed plugin: its distribution includes `cli/kttp-cli.jar`. End users do not need to build it. Locate the actual
   installed plugin directory rather than inventing a fixed home/config path.
@@ -52,7 +53,8 @@ filename. Omitting `--storage-dir` prevents a prior stored token from replacing 
 
 | Option                          | Actual behavior                                                                                                                        |
 |---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
-| `--script <file>`               | Required script file input                                                                                                             |
+| `--script <file>`               | Required for script execution or compilation                                                                                           |
+| `--version` / `-v`              | Print the packaged CLI version and exit without a script                                                                              |
 | No request selector             | Execute registered requests in order after script evaluation                                                                           |
 | `--request-name <name>`         | Select an explicit request name or delegated property coordinate; use unambiguous names                                                |
 | `--request-number <n>`          | Zero-based registration index, not the editor's displayed ordinal                                                                      |
@@ -63,13 +65,18 @@ filename. Omitting `--storage-dir` prevents a prior stored token from replacing 
 | `--storage-dir <directory>`     | Persistent values; absent means per-process in-memory storage                                                                          |
 | `--cookies-file <file>`         | Persistent cookie jar; absent means no cookie session store                                                                            |
 | `--execution-mode COMPILE_ONLY` | Compile without evaluating the script body                                                                                             |
-| `--execution-mode CURL`         | Produce cURL using the script's constructed request without HTTP transport; still evaluates Kotlin and may execute script side effects |
+| `--execution-mode CURL`         | Export selected requests as cURL, skipping their HTTP transport and response callbacks                                                |
 | `--no-compilation-cache`        | Force a new compilation; useful when validating examples                                                                               |
 | `--json-output`                 | Final structured execution result; scripts/compile mode can also print other lines                                                     |
 
 Prefer one selector. The internal IDE `--request-lines first:last` selector takes precedence, then a valid numeric
 selector, then a name. Helpers can create several registrations at one source location; unique names are clearer for
 those scripts.
+
+cURL export builds the selected requests and retains their application interceptor configuration. It skips the
+exported requests' `then`/`thenResponse`, JSON decoding and assertions. Top-level Kotlin and prerequisite requests
+needed to resolve values may still execute and use HTTP; export is not an offline check or a sandbox. Without a
+selector, every unignored HTTP registration is exported.
 
 Read the process exit code and final result's `success`/`error`. Compilation failures and assertion failures are
 execution failures. A returned HTTP 4xx/5xx does not alone imply CLI failure; assert the expected status. JSON output is
@@ -86,6 +93,8 @@ preserve preceding script output when diagnosing failures.
   promise this action always selects the request at the caret.
 - Script text output is in the **Run** tool window. Saved responses appear in Kttp's **Responses** tree and **History**.
   The **Response** tab shows the latest GUI Send result.
+- The editor's **+ → Custom request** inserts a `request("CUSTOM", url) { ... }` template. Replace the method and URL
+  as needed. **Copy as cURL** exports the request at the caret, falling back to the first request if none contains it.
 - Named IDE environments come from `kttp.env.json` in the script directory, then the IDE's Consoles/Kttp directory.
   Select a profile; the IDE forwards its flattened values to the CLI. See [syntax.md](syntax.md#environment) for both
   schemas.
@@ -104,10 +113,20 @@ Script file rows show the total request count. The **Quick support** filter sele
 without changing execution modes. Quick is unavailable when the request cannot be represented by the GUI model.
 Follow also needs valid source and successful compilation/evaluation.
 
+Custom methods such as `request("CUSTOM", url)` need Follow Script. Their read-only method field displays **Script**;
+Quick Request, Detach and GUI script generation are unavailable for those requests.
+
 New drafts default to Quick; imported script requests default to Follow, with remembered per-request preferences.
+New GUI drafts contain a GET example for `https://httpbin.org/get`, query `source=kttp` and header
+`Accept: application/json`. The example is not sent or saved automatically.
 Editing a draft changes a working copy; **Save Draft** persists it. **Generate/Update Script** writes generated source,
 and Follow Send prepares it before execution. Imported source is saved and executed without replacing its Kotlin with
 generated GUI code. **Detach** creates an editable supported projection and switches it to Quick.
+
+**Sources** separates saved **Drafts**, current **Project** content roots/modules, and the running IDE's **Kttp**
+console scripts. Project scanning omits IDE-excluded and version-control-ignored files; it is not limited to `.kttp/`.
+The first project opening supplies initial docked/navigation widths; later manual sizing and saved splitters take
+precedence. cURL import is not implemented in either the editor or GUI; this skill can translate pasted cURL to source.
 
 Follow has JVM startup and compilation costs, including seconds on a cold run; Quick avoids those phases. Do not infer
 total latency from HTTP timing alone or promise the two modes have equal latency.
@@ -129,7 +148,7 @@ full body.
 | Unresolved `OkHttpExecutor`, `json {}`, `assert { status(...) }`, or builder `name` | Use registered request functions, `body(serializedJson)`, `.then { assertStatus(...) }`, and `name = ...` as a request argument |
 | Status/body properties unavailable in `.then`                                       | Receiver is `ThenContext`; use `statusCode`, cached `body`, `decode`, or `getResponse()`                                        |
 | `No response available` after chained `.then`                                       | Combine operations in one deferred callback; the mapped-holder overload expects a response already received                     |
-| Request-result delegate has no applicable `getValue`                                | Include the login recipe's top-level compatibility getter; the current runtime delegate getter lacks `operator`                 |
+| Request-result delegate has no applicable `getValue`                                | Check the loaded runtime version and explicit result type; Kttp 1.1.0 supplies operator getters without a compatibility extension |
 | Cannot access holder `execute()`                                                    | It is internal; use the tested delegated login result rather than invoking it directly                                          |
 | `var ... by variable()` fails to compile                                            | Use explicit `vars.setValue` / `vars.getValue` as in the stored-values recipe                                                   |
 | Outer `vars`/builder member cannot be called with an implicit receiver              | Capture it at script level, for example `val savedValues = vars`, then use that local value inside the nested DSL block         |

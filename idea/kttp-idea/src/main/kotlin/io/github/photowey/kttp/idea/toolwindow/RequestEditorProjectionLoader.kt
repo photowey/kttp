@@ -16,8 +16,10 @@
 
 package io.github.photowey.kttp.idea.toolwindow
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import io.github.photowey.kttp.core.enums.HttpMethod
@@ -43,7 +45,12 @@ import java.nio.charset.StandardCharsets
  * @since 2026/11/05
  */
 internal class RequestEditorProjectionLoader(private val project: Project) {
-    fun load(declaration: KttpRequestDeclaration, file: VirtualFile?, index: Int?): GuiDraft {
+    fun load(declaration: KttpRequestDeclaration, file: VirtualFile?, index: Int?): GuiDraft =
+        ApplicationManager.getApplication().runReadAction(Computable {
+            loadUnderReadAction(declaration, file, index)
+        })
+
+    private fun loadUnderReadAction(declaration: KttpRequestDeclaration, file: VirtualFile?, index: Int?): GuiDraft {
         val ktFile = file?.let { PsiManager.getInstance(project).findFile(it) as? KtFile }
         val projection = RequestProjectionExtractor.extract(declaration, ktFile, index, file?.path)
         return GuiDraft(
@@ -98,16 +105,20 @@ internal class RequestEditorProjectionLoader(private val project: Project) {
         file: VirtualFile?,
         index: Int?,
         ktFile: KtFile?
-    ): RequestSpec = RequestSpec(
-        identity = RequestIdentity(declaration.getName(), file?.path, index),
-        method = declaration.getHttpMethod()?.let(HttpMethod::valueOf) ?: HttpMethod.GET,
-        target = RequestTarget(
-            ValueRef.Literal(declaration.getUrl().orEmpty()),
-            queryParams = declaration.getQueryParams()
-                .map { (key, value) -> NameValueRef(key, ValueRef.Literal(value)) }),
-        headers = declaration.getHeaders().map { (key, value) -> HeaderSpec(key, ValueRef.Literal(value)) },
-        body = fallbackBody(declaration, file, ktFile)
-    )
+    ): RequestSpec {
+        val signature = declaration.element?.let { ProjectionSyntax.extractRequestSignature(it, declaration) }
+        return RequestSpec(
+            identity = RequestIdentity(declaration.getName(), file?.path, index),
+            // A script-only placeholder never reaches Quick Request or script generation.
+            method = signature?.method ?: HttpMethod.GET,
+            target = RequestTarget(
+                signature?.urlRef ?: ValueRef.OpaqueScript(declaration.getUrl().orEmpty()),
+                queryParams = declaration.getQueryParams()
+                    .map { (key, value) -> NameValueRef(key, ValueRef.Literal(value)) }),
+            headers = declaration.getHeaders().map { (key, value) -> HeaderSpec(key, ValueRef.Literal(value)) },
+            body = fallbackBody(declaration, file, ktFile)
+        )
+    }
 
     private fun fallbackBody(declaration: KttpRequestDeclaration, file: VirtualFile?, ktFile: KtFile?): BodySpec {
         val baseDir = project.basePath ?: file?.parent?.path

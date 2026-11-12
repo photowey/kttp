@@ -43,8 +43,8 @@ Follow Script 保留脚本行为；Quick Request 跳过 JVM 启动和脚本编�
 
 ## 当前范围
 
-插件以 IntelliJ IDEA 2025.3.2 为构建目标，设置 `sinceBuild=253.0`。开发使用 JDK 21，
-脚本执行也推荐使用 JDK 21。其他 IDE 产品和第三方主题尚未单独验证。
+插件以 IntelliJ IDEA 2026.3 为构建目标，设置 `sinceBuild=263.0`。开发使用 JDK 25，
+脚本执行推荐使用 JDK 21 或 25。其他 IDE 产品和第三方主题尚未单独验证。
 HTTP 文件和 Postman 导入操作目前是占位功能。
 
 每次文档构建对应一个源代码版本。线上 Pages 站点跟随已发布的稳定 Release 部署；

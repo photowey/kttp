@@ -26,12 +26,12 @@ import kotlin.reflect.KProperty
  * @since 2026/02/15
  */
 interface ValueDelegate<T> {
-    fun getValue(
+    operator fun getValue(
         @Suppress("unused") thisRef: Nothing?,
         @Suppress("unused") property: KProperty<*>
     ): T
 
-    fun getValue(
+    operator fun getValue(
         @Suppress("unused") thisRef: Any?,
         @Suppress("unused") property: KProperty<*>
     ): T

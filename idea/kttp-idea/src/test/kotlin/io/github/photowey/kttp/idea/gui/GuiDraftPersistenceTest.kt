@@ -29,6 +29,35 @@ import java.io.File
  * @since 2026/11/05
  */
 class GuiDraftPersistenceTest : LightPlatformTestCase() {
+    fun testNewGuiDraftHasAnUnsavedHttpbinExampleAndUsableScriptPreview() = withArchive { file ->
+        val service = GuiDraftService(project)
+        val draft = service.createNewDraft()
+        assertEquals(ValueRef.Literal("https://httpbin.org/get"), draft.request.target.url)
+        assertEquals(listOf(NameValueRef("source", ValueRef.Literal("kttp"))), draft.request.target.queryParams)
+        assertEquals(listOf(HeaderSpec("Accept", ValueRef.Literal("application/json"))), draft.request.headers)
+        assertEquals(io.github.photowey.kttp.idea.execution.RequestExecutionMode.QUICK_REQUEST, draft.executionMode)
+        assertNull(draft.bridge.sourceScriptPath)
+        assertNull(draft.bridge.generatedScriptPath)
+        assertFalse("Creating an example must not save it", file.exists())
+        assertEquals(
+            "GET(\"https://httpbin.org/get\") {\n" +
+                "    query(\"source\", \"kttp\")\n" +
+                "    header(\"Accept\", \"application/json\")\n}\n",
+            GuiScriptGenerator.render(draft)
+        )
+        assertTrue("Programmatic empty drafts remain empty", service.createEmptyDraft().request.target.queryParams.isEmpty())
+    }
+
+    fun testCreatingAnExampleDoesNotChangeAnExistingSavedDraft() = withArchive { file ->
+        val service = GuiDraftService(project)
+        val saved = service.saveDraft(service.createEmptyDraft().copy(title = "Existing"))
+        val previousArchive = file.readText()
+        val example = service.createNewDraft()
+        assertTrue(saved.id != example.id)
+        assertEquals(previousArchive, file.readText())
+        assertEquals(saved, service.findDraft(saved.id))
+    }
+
     fun testCorruptReadFollowedBySavePreservesTheOriginalArchiveAndReportsFailure() = withArchive { file ->
         val corrupted = "{ damaged draft archive"
         file.writeText(corrupted)

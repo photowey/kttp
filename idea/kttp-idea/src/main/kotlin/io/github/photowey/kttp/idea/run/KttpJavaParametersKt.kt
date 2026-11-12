@@ -19,6 +19,8 @@ package io.github.photowey.kttp.idea.run
 import com.intellij.execution.CantRunException
 import com.intellij.execution.configurations.JavaParameters
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.projectRoots.JavaSdk
+import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ProjectRootManager
@@ -62,6 +64,10 @@ fun kttpRunScriptJavaParameters(
 
     // VM parameters
     params.vmParametersList.add("-ea")
+    // The CLI terminal library uses JNI; Java 24+ requires explicit native access for it.
+    if (JavaSdk.getInstance().getVersion(sdk)?.isAtLeast(JavaSdkVersion.JDK_24) == true) {
+        params.vmParametersList.add("--enable-native-access=ALL-UNNAMED")
+    }
 
     // Main class
     params.mainClass = "io.github.photowey.kttp.cli.command.KttpCommandKt"

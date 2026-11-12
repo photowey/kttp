@@ -2,7 +2,6 @@
 <idea-plugin>
     <id>io.github.photowey.kttp</id>
     <name>Kttp</name>
-    <version>1.0.1</version>
     <vendor url="https://photowey.github.io">io.github.photowey</vendor>
 
     <description
@@ -15,6 +14,7 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.lang</depends>
     <depends>com.intellij.modules.json</depends>
+    <depends>com.intellij.modules.vcs</depends>
     <depends>org.jetbrains.kotlin</depends>
     <depends optional="true" config-file="spring-kttp-optional.xml">com.intellij.spring</depends>
 

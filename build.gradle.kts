@@ -10,7 +10,7 @@ val coreJvmTarget = JvmTarget.fromTarget(providers.gradleProperty("java.version"
 subprojects {
     group = property("project.group") as String
     version = property("project.version") as String
-    val moduleJvmTarget = if (name == "kttp-idea") JvmTarget.JVM_21 else coreJvmTarget
+    val moduleJvmTarget = if (name == "kttp-idea") JvmTarget.JVM_25 else coreJvmTarget
     val javaTarget = moduleJvmTarget.target
 
     repositories {

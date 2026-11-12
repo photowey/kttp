@@ -77,18 +77,11 @@ The convenience `file` helper does not infer a MIME type from the filename.
 ## Login and dependent request
 
 This API returns `{"token":"..."}` from `/login` and `{"id":42}` from `/users/42`. Give the mapped login result a
-delegated property. Its callback's last expression supplies the value. The current runtime's `ValueDelegate.getValue`
-lacks Kotlin's `operator` modifier, so include the small extension below for top-level delegated request properties. It
-forwards to the existing member getter and retains Kttp's dependency execution.
+delegated property. Its callback's last expression supplies the value. Kttp 1.1.0 supplies the operator getters for
+request-result properties directly; no compatibility extension is needed.
 
 ```kotlin
 import io.github.photowey.kttp.core.context.defaultObjectMapper
-import io.github.photowey.kttp.dsl.ValueDelegate
-import kotlin.reflect.KProperty
-
-operator fun <T> ValueDelegate<T>.getValue(receiver: Nothing?, property: KProperty<*>): T =
-    this.getValue(receiver, property)
-
 val baseUrl: String by env
 val username: String by env
 val password: String by env
@@ -119,10 +112,10 @@ Delegated results use storage keyed by property name. Default CLI storage is per
 storage, an existing `token` can be reused instead of refreshing login; omit `--storage-dir` for a fresh login test. Use
 distinct property names for unrelated workflows sharing storage and non-null mapped values.
 
-`val token = POST(...).then { ... }` assigns a holder, not a token. Keep the `by` and compatibility getter above. Do not
+`val token = POST(...).then { ... }` assigns a holder, not a token. Keep the `by` and explicit result type above. Do not
 call the holder's `execute()` directly: it is internal to the runtime. Avoid creating a second login to extract the same
-token or reading a consumed response body twice. If a future runtime supplies an operator getter, recheck whether the
-compatibility extension is still needed.
+token or reading a consumed response body twice. Older runtimes may need a compatibility getter; check the actual
+runtime version rather than adding one to a Kttp 1.1.0 script.
 
 ## Reuse Kotlin functions
 

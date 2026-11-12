@@ -27,6 +27,7 @@ import java.net.InetSocketAddress
 import java.net.URLClassLoader
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -42,6 +43,130 @@ import kotlin.test.assertTrue
 class KttpCommandLifecycleTest {
     @TempDir
     lateinit var directory: Path
+
+    @Test
+    fun `curl exports the selected request without executing its JSON response callback`() {
+        withCurlServer { url, received ->
+            val callback = directory.resolve("curl-callback.txt").toFile()
+            val source = """
+                GET("$url/unselected")
+                GET("$url/get") {
+                    header("Content-Type", "application/json")
+                    query("key", "value")
+                }.then {
+                    val url: String = decode("${'$'}.url")
+                    val response = getResponse()
+                    assertStatus(200)
+                    assertThat(url).isEqualTo("$url/get?key=value")
+                    assertThat(response.code).isEqualTo(200)
+                    java.io.File("${callback.path}").writeText("callback ran")
+                }
+            """.trimIndent()
+
+            val run = runCli("curl-json", source, "--execution-mode", "CURL", "--request-number", "1")
+
+            assertEquals(0, run.exitCode, run.output)
+            assertTrue(run.stdout.contains("curl -X GET"), run.output)
+            assertTrue(run.stdout.contains("$url/get?key=value"), run.output)
+            assertFalse(run.stdout.contains("/unselected"), run.output)
+            assertFalse(callback.exists(), "Export must not execute the selected response callback")
+            assertEquals(0, received.get(), "Export must not send the selected HTTP request")
+            assertFalse(directory.resolve("responses").toFile().walk().any { it.isFile })
+        }
+    }
+
+    @Test
+    fun `curl renders every selected declaration and preserves application interceptor rewrites`() {
+        withCurlServer { url, received ->
+            val source = """
+                configureClient {
+                    addInterceptor { chain ->
+                        chain.proceed(chain.request().newBuilder().header("X-Global", "rewritten").build())
+                    }
+                }
+                GET("$url/first").then { error("GET callback must not run") }
+                POST("$url/second") {
+                    header("Content-Type", "application/json")
+                    body("{\"message\":\"export\"}")
+                    configure {
+                        addInterceptor { chain ->
+                            chain.proceed(chain.request().newBuilder().header("X-Local", "kept").build())
+                        }
+                    }
+                }.then { error("POST callback must not run") }
+            """.trimIndent()
+
+            val run = runCli("curl-all", source, "--execution-mode", "CURL")
+
+            assertEquals(0, run.exitCode, run.output)
+            assertEquals(2, Regex("curl -X ").findAll(run.stdout).count(), run.output)
+            assertTrue(run.stdout.contains("$url/first"), run.output)
+            assertTrue(run.stdout.contains("$url/second"), run.output)
+            assertTrue(run.stdout.contains("X-Global: rewritten"), run.output)
+            assertTrue(run.stdout.contains("X-Local: kept"), run.output)
+            assertTrue(run.stdout.contains("{\"message\":\"export\"}"), run.output)
+            assertEquals(0, received.get())
+        }
+    }
+
+    @Test
+    fun `curl resolves a delegated prerequisite but does not send or process the exported request`() {
+        withCurlServer { url, received ->
+            val source = """
+                val token: String by GET("$url/token").then { decode<String>("${'$'}.token") }
+                GET("$url/export") {
+                    header("Authorization", "Bearer ${'$'}token")
+                }.then { error("Export callback must not run") }
+            """.trimIndent()
+
+            val run = runCli("curl-dependency", source, "--execution-mode", "CURL", "--request-number", "1")
+
+            assertEquals(0, run.exitCode, run.output)
+            assertEquals(1, Regex("curl -X ").findAll(run.stdout).count(), run.output)
+            assertTrue(run.stdout.contains("$url/export"), run.output)
+            assertTrue(run.stdout.contains("Authorization: Bearer resolved"), run.output)
+            assertEquals(1, received.get(), "Only the required token request may use HTTP")
+            assertEquals(null, run.result.statusCode, "A prerequisite response is not an export response")
+        }
+    }
+
+    private fun withCurlServer(block: (String, AtomicInteger) -> Unit) {
+        val received = AtomicInteger()
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/") { exchange ->
+            received.incrementAndGet()
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            val body = "{\"token\":\"resolved\"}".toByteArray()
+            exchange.sendResponseHeaders(200, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        server.start()
+        try {
+            block("http://127.0.0.1:${server.address.port}", received)
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun `version options exit before requiring or validating a script`() {
+        for (option in listOf("--version", "-v")) {
+            val output = directory.resolve("version-${option.length}.out").toFile()
+            val process = ProcessBuilder(
+                File(System.getProperty("java.home"), "bin/java").absolutePath,
+                "-cp", runtimeClasspath(), "io.github.photowey.kttp.cli.command.KttpCommandKt",
+                option, "--script", directory.resolve("does-not-exist.kttp.kts").toString()
+            ).redirectErrorStream(true).redirectOutput(output).start()
+            if (!process.waitFor(15, TimeUnit.SECONDS)) {
+                process.destroyForcibly()
+                process.waitFor()
+                error("Version option did not exit promptly: ${output.readText()}")
+            }
+            assertEquals(0, process.exitValue(), output.readText())
+            assertTrue(output.readText().contains("Kttp CLI version "), output.readText())
+            assertFalse(output.readText().contains("does not exist"), output.readText())
+        }
+    }
 
     @Test
     fun `storage-dir persists variables between CLI runs`() {

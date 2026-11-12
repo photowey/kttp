@@ -52,6 +52,25 @@ import javax.swing.JTextField
  * @since 2026/11/05
  */
 class RequestEditorWorkflowTest : BasePlatformTestCase() {
+    fun testInitialAndNewDraftPreviewsContainTheExampleWithoutSending() {
+        var responses = 0
+        val editor = RequestEditorPanel(project) { _, _ -> responses++ }
+        fun assertExample() {
+            val header = descendants(editor).filterIsInstance<ComposerHeaderPanel>().single()
+            assertEquals("https://httpbin.org/get", header.urlField.text)
+            val bridge = descendants(editor).filterIsInstance<ComposerBridgePanel>().single()
+            val preview = descendants(bridge).filterIsInstance<javax.swing.JTextArea>()
+                .single { it.text.startsWith("GET(") }.text
+            assertTrue(preview.contains("query(\"source\", \"kttp\")"))
+            assertTrue(preview.contains("header(\"Accept\", \"application/json\")"))
+            assertEquals(0, responses)
+        }
+        assertExample()
+        editor.loadDraft(draft(RequestSpec(target = RequestTarget(ValueRef.Literal("http://localhost/changed")))))
+        editor.createNewDraft()
+        assertExample()
+    }
+
     fun testSavePreservesPathRepeatedHeadersAndFormValues() {
         val spec = RequestSpec(
             method = HttpMethod.POST,

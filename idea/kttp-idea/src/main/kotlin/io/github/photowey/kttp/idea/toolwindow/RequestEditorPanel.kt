@@ -22,6 +22,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
@@ -69,7 +70,7 @@ class RequestEditorPanel(
     private val form = RequestEditorFormMapper(headerPanel, paramsTabPanel, headersTabPanel, bodyTabPanel, authTabPanel)
     private val scripts = RequestScriptFileCoordinator(project)
     private val projections = RequestEditorProjectionLoader(project)
-    private val session = EditorWorkingSession(draftService.createEmptyDraft())
+    private val session = EditorWorkingSession(draftService.createNewDraft())
     private var isLoadingRequest = false
     private var activeCancellation: GuiRequestCancellation? = null
     private var disposed = false
@@ -111,7 +112,7 @@ class RequestEditorPanel(
         createNewDraft()
     }
 
-    fun createNewDraft() = loadDraft(draftService.createEmptyDraft())
+    fun createNewDraft() = loadDraft(draftService.createNewDraft())
 
     fun loadDraft(draft: GuiDraft) {
         if (draft.id == session.draft.id && !form.commitPendingEdits()) return
@@ -162,10 +163,12 @@ class RequestEditorPanel(
 
     internal fun refreshCurrentSource() {
         val file = currentSourceFile ?: return
-        val element = sourceDeclaration?.element
-        val psi = PsiManager.getInstance(project).findFile(file) as? KtFile
-        val declarations = psi?.toKttpScript()?.findRequestDeclarations().orEmpty()
-        val index = if (element == null) -1 else declarations.indexOfFirst { it.element == element }
+        val (declarations, index) = ApplicationManager.getApplication().runReadAction(Computable {
+            val element = sourceDeclaration?.element
+            val psi = PsiManager.getInstance(project).findFile(file) as? KtFile
+            val declarations = psi?.toKttpScript()?.findRequestDeclarations().orEmpty()
+            declarations to if (element == null) -1 else declarations.indexOfFirst { it.element == element }
+        })
         if (index < 0) {
             sourceDeclaration = null
             applyDraftState()
@@ -499,7 +502,10 @@ class RequestEditorPanel(
             summary, GuiBridgeFormatter.formatSourceSummary(draft.request),
             GuiBridgeFormatter.formatGaps(buckets.blocking, "No blocking gaps."),
             GuiBridgeFormatter.formatGaps(buckets.advisory, "No advisory gaps."), session.linkedScriptPath,
-            runCatching { GuiScriptGenerator.render(draft) }.getOrElse { "Script preview unavailable: ${it.message}" })
+            if (draft.bridge.mode == GuiMode.SCRIPT_ONLY) {
+                "// HTTP preview unavailable. Open Script to view the original request."
+            } else runCatching { GuiScriptGenerator.render(draft) }
+                .getOrElse { "Script preview unavailable: ${it.message}" })
     }
 
     private fun editorOperation(title: String, action: () -> Unit) {

@@ -65,7 +65,8 @@ internal class SidebarRequestTreeRenderer(private val summary: (String) -> FileP
                 this.foreground = UIUtil.getContextHelpForeground()
             }
 
-            is GroupNode -> label(item.displayName, AllIcons.Nodes.Folder, selected, hasFocus)
+            is GroupNode -> label("${item.displayName} (${node.childCount})", AllIcons.Nodes.Folder, selected, hasFocus)
+                .apply { toolTipText = tooltip(item.description) }
             is DraftNode -> label(item.draft.title, AllIcons.Actions.MenuOpen, selected, hasFocus)
             is FileNode -> file(item, selected, hasFocus)
             is RequestNode -> request(item, selected, hasFocus)
@@ -74,13 +75,19 @@ internal class SidebarRequestTreeRenderer(private val summary: (String) -> FileP
     }
 
     private fun label(text: String, icon: javax.swing.Icon, selected: Boolean, focus: Boolean): JLabel =
-        fileLabel.apply { this.text = text; this.icon = icon; selection(this, selected, focus) }
+        fileLabel.apply {
+            this.text = text
+            this.icon = icon
+            toolTipText = null
+            selection(this, selected, focus)
+        }
 
     private fun file(item: FileNode, selected: Boolean, focus: Boolean): JPanel {
         val badge = summary(item.file.path)?.let(RequestProjectionPresentation::fileBadge)
         fileLabel.text = item.file.name
         fileLabel.icon = AllIcons.FileTypes.Any_type
         fileLabel.isOpaque = false
+        fileLabel.toolTipText = null
         filePanel.removeAll()
         filePanel.add(fileLabel, BorderLayout.WEST)
         filePanel.toolTipText = badge?.tooltip?.let(::tooltip)

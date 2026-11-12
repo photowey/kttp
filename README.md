@@ -22,11 +22,12 @@ See [Development and Releases](docs/design/docs/development.md) for CI, Pages se
 
 ## Build and install locally
 
-The plugin targets IntelliJ IDEA **2025.3.2**, with `sinceBuild=253.0`, and requires the Kotlin plugin and the platform
-language/JSON modules declared in `plugin.xml`. Other IDE products have not been independently verified.
-Use JDK 21 for development. Script execution requires a configured project JDK; JDK 21 is recommended.
+Kttp 1.1.0 targets IntelliJ IDEA **2026.3**, with `sinceBuild=263.0` and `untilBuild=263.*`, and requires the Kotlin plugin
+and the platform language/JSON modules declared in `plugin.xml`. Earlier IDEA versions need a compatible older plugin
+such as Kttp 1.0.1. Other IDE products have not been independently verified.
+Use JDK 25 for development. Script execution requires a configured project JDK; JDK 21 or 25 is recommended.
 
-The Gradle Wrapper downloads Gradle 8.13 from the official HTTPS distribution and verifies its SHA-256 checksum.
+The Gradle Wrapper downloads Gradle 9.7.0 from the official HTTPS distribution and verifies its SHA-256 checksum.
 The first build needs network access for Gradle, dependencies, and the IntelliJ Platform, but no developer-specific
 Maven repository or home directory settings.
 
@@ -84,9 +85,16 @@ reveal-in-file-manager action. The Kttp **Response** tab displays the latest GUI
 The `then` receiver is `ThenContext`, with methods such as `assertStatus`, `decode`, and `getResponse`. For a `Response`
 receiver, use `thenResponse`.
 
+Use the editor's **+ → Custom request** to insert a `request("CUSTOM", url) { ... }` template. **Copy as cURL** exports
+the request at the caret, falling back to the first request when necessary. Export skips the selected request's HTTP
+transport and response callbacks; top-level Kotlin and prerequisite requests can still run. See the
+[CLI reference](docs/design/docs/cli.md) for the execution boundaries.
+
 ## GUI execution modes
 
-Open **View → Tool Windows → Kttp**. Create a **New Draft**, fill in a URL, and choose an execution mode:
+Open **View → Tool Windows → Kttp**. **New Draft** starts with `https://httpbin.org/get`, a `source=kttp` query
+parameter and an `Accept: application/json` header. Edit the example and choose an execution mode; it is sent only
+when you click **Send**:
 
 | Mode              | Execution                                                                                                                                                                          | Use it when                                                                           |
 |-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
@@ -193,7 +201,7 @@ in `core/kttp-cli/build/libs/`; the `-plain.jar` artifact does not bundle its de
 
 - Quick Request sends only the HTTP data represented by the GUI; use Follow Script for Kotlin script behavior.
 - Quick Request uses a 60-second call timeout and does not maintain a persistent cookie jar.
-- HTTP and Postman import actions are placeholders.
+- HTTP-file and Postman import actions are placeholders; cURL import is not implemented.
 - `http2()` / the HTTP/2 checkbox selects OkHttp's `H2_PRIOR_KNOWLEDGE` mode; it is not an automatic HTTP/2 negotiation
   switch.
 - Compatibility with every IDE product or third-party theme has not been independently verified.

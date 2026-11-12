@@ -16,6 +16,7 @@
 
 package io.github.photowey.kttp.idea.toolwindow
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.github.photowey.kttp.idea.execution.RequestExecutionMode
@@ -36,6 +37,46 @@ import javax.swing.JComboBox
  * @since 2026/11/05
  */
 class RequestExecutionModesTest : BasePlatformTestCase() {
+    fun testCustomMethodImportsForFollowScriptWithoutFallingBackToANewDraft() {
+        val source = "request(\"CUSTOM\", \"http://localhost/custom\") { header(\"Accept\", \"application/json\") }"
+        val file = myFixture.addFileToProject("custom-mode.kttp.kts", source) as KtFile
+        val declaration = file.toKttpScript()!!.findRequestDeclarations().single()
+        val imported = RequestEditorProjectionLoader(project).load(declaration, file.virtualFile, 0)
+        assertEquals(io.github.photowey.kttp.idea.gui.GuiMode.SCRIPT_ONLY, imported.bridge.mode)
+        assertEquals(
+            io.github.photowey.kttp.idea.gui.ValueRef.Literal("http://localhost/custom"),
+            imported.request.target.url
+        )
+        val editor = RequestEditorPanel(project) { _, _ -> fail("Selecting must not send") }
+        editor.loadFromRequest(declaration, file.virtualFile, 0)
+        assertEquals(file.virtualFile, editor.currentSourceFile)
+        assertEquals(RequestExecutionMode.FOLLOW_SCRIPT, modeCombo(editor).selectedItem)
+        assertTrue(button(editor, "Send").isEnabled)
+        val header = descendants(editor).filterIsInstance<ComposerHeaderPanel>().single()
+        assertEquals("Script", header.methodComboBox.selectedItem)
+        modeCombo(editor).selectedItem = RequestExecutionMode.QUICK_REQUEST
+        assertFalse(button(editor, "Send").isEnabled)
+        assertEquals(source, file.text)
+    }
+
+    fun testImportAndRefreshAcquireReadAccessForUiCallbacks() {
+        val file = myFixture.addFileToProject(
+            "callback-mode.kttp.kts", "GET(\"http://localhost/callback\", name = \"Callback request\")"
+        ) as KtFile
+        val declaration = file.toKttpScript()!!.findRequestDeclarations().single()
+        val editor = RequestEditorPanel(project) { _, _ -> fail("Importing must not send") }
+        val application = ApplicationManager.getApplication()
+        requireNotNull(application.threadingSupport)
+            .releaseTheAcquiredWriteIntentLockThenExecuteActionAndTakeWriteIntentLockBack {
+                assertFalse(application.isReadAccessAllowed)
+                val imported = RequestEditorProjectionLoader(project).load(declaration, file.virtualFile, 0)
+                assertEquals("Callback request", imported.title)
+                editor.loadFromRequest(declaration, file.virtualFile, 0)
+                editor.refreshCurrentSource()
+                assertTrue(button(editor, "Send").isEnabled)
+            }
+    }
+
     fun testNewDraftDefaultsToQuickAndChoiceIsSaved() {
         val service = project.getService(GuiDraftService::class.java)
         val draft = service.createEmptyDraft()

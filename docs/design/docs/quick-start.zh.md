@@ -2,8 +2,9 @@
 
 ## 安装 IDEA 插件
 
-开发请使用 JDK 21。插件以 IntelliJ IDEA 2025.3.2 为目标，依赖 Kotlin 插件，以及 `plugin.xml`
-中声明的平台语言和 JSON 模块。
+开发请使用 JDK 25。插件以 IntelliJ IDEA 2026.3 为目标，依赖 Kotlin 插件，以及 `plugin.xml`
+中声明的平台语言和 JSON 模块。Kttp 1.1.0 声明兼容构建号 `263.0` 至 `263.*`；
+较早的 IDE 请使用 Kttp 1.0.1 等兼容旧版。
 
 如有已发布的 [GitHub Release](https://github.com/photowey/kttp/releases)，下载其中的
 `kttp-idea-X.Y.Z.zip`。在 IDEA 中打开 **Settings → Plugins → Install Plugin from Disk…**，
@@ -21,7 +22,7 @@
 
 ## 运行第一个脚本
 
-1. 配置项目 JDK，推荐使用 JDK 21。
+1. 配置项目 JDK，推荐使用 JDK 21 或 25。
 2. 选择 **File → New → Kttp Script**。新文件创建在
    **Scratches and Consoles → Consoles → Kttp** 下，也可以在项目中创建 `.kttp.kts` 文件。
 3. 将文件内容替换为以下脚本：
@@ -45,8 +46,9 @@ GET("https://httpbin.org/get", name = "first-request") {
 
 ## 从 GUI 发送请求
 
-打开 **View → Tool Windows → Kttp**，点击 **New Draft**。选择 `GET`，填写
-`https://httpbin.org/get`，保持 **Quick Request** 模式，点击 **Send**。
+打开 **View → Tool Windows → Kttp**，点击 **New Draft**。草稿已包含 `GET https://httpbin.org/get`、
+`source=kttp` 查询参数和 `Accept: application/json` 请求头。检查或修改示例，保持 **Quick Request** 模式，
+点击 **Send**。打开草稿不会自动发送或保存。
 
 使用 **Save Draft** 保存请求。**Generate Script** 会写入关联的 `.kttp.kts` 文件并保存草稿。
 需要在脚本上下文中执行时，切换到 **Follow Script**。从已有脚本选择的请求默认使用 Follow Script，

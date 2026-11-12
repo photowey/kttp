@@ -18,8 +18,10 @@ package io.github.photowey.kttp.idea.toolwindow
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Computable
+import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
@@ -47,11 +49,17 @@ internal class SidebarFileDiscovery(private val project: Project) {
     fun scripts(): SidebarFileGroups {
         val projectFiles = ApplicationManager.getApplication().runReadAction(Computable<List<VirtualFile>> {
             if (project.isDisposed) emptyList()
-            else ProjectRootManager.getInstance(project).contentRoots.flatMap(::scriptsUnder)
+            else {
+                val index = ProjectFileIndex.getInstance(project)
+                val changes = ChangeListManager.getInstance(project)
+                ProjectRootManager.getInstance(project).contentRoots.flatMap { root ->
+                    scriptsUnder(root) { file -> index.isInContent(file) && !changes.isIgnoredFile(file) }
+                }
+            }
         })
         return SidebarFileGroups(
             projectFiles.distinct(),
-            findDirectory(KttpConsolesPath.getKttpConsolesDir())?.let(::scriptsUnder).orEmpty()
+            findDirectory(KttpConsolesPath.getKttpConsolesDir())?.let { scriptsUnder(it) }.orEmpty()
         )
     }
 
@@ -68,11 +76,14 @@ internal class SidebarFileDiscovery(private val project: Project) {
         project.basePath?.let { contains(KttpProjectPath.getResponsesDir(it), path) } == true ||
             contains(KttpConsolesPath.getResponsesDir(), path)
 
-    private fun scriptsUnder(directory: VirtualFile): List<VirtualFile> {
+    private fun scriptsUnder(
+        directory: VirtualFile,
+        include: (VirtualFile) -> Boolean = { true }
+    ): List<VirtualFile> {
         if (!directory.isDirectory || !directory.isValid || project.isDisposed) return emptyList()
-        return directory.children.flatMap { child ->
+        return directory.children.filter(include).flatMap { child ->
             when {
-                child.isDirectory -> scriptsUnder(child)
+                child.isDirectory -> scriptsUnder(child, include)
                 child.name.endsWith(".kttp.kts") -> listOf(child)
                 else -> emptyList()
             }

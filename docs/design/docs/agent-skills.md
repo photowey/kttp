@@ -4,6 +4,12 @@ The `kttp` Agent Skill provides syntax and execution guidance for writing, expla
 scripts, including the differences between script execution and Quick Request.
 The skill does not install the IDEA plugin, CLI or JDK.
 
+These instructions describe Kttp 1.1.0: IDEA 2026.3 (builds `263.0` through `263.*`), JDK 25 for development, and
+JDK 21 or 25 for scripts. They cover native delegated request results, cURL export boundaries and custom methods in
+Follow Script. When using an older runtime, check its API before applying version-specific guidance.
+
+An agent can translate pasted cURL into Kotlin source using this skill. The plugin has no cURL import UI in 1.1.0.
+
 ## Install from GitHub
 
 Install Node.js and npm using a Node.js version supported by the Skills CLI. Once the repository is published, run:

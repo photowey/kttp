@@ -2,7 +2,7 @@
 
 ## 本地开发
 
-将仓库根目录作为 Gradle 工程导入，并使用 JDK 21。Gradle Wrapper 固定为 Gradle 8.13，
+将仓库根目录作为 Gradle 工程导入，并使用 JDK 25。Gradle Wrapper 固定为 Gradle 9.7.0，
 同时校验官方发行包的 SHA-256。与本机相关的设置请放在个人的 `~/.gradle/gradle.properties` 中。
 
 ```bash
@@ -13,7 +13,7 @@
 ```
 
 `runIde` 会启动安装当前插件的开发 IDEA 实例，沙箱位于 `idea/kttp-idea/build/idea-sandbox/`。
-构建目标为 IDEA 2025.3.2，`sinceBuild=253.0`；Core 字节码目标与插件的 JDK 21 目标分别配置。
+构建目标为 IDEA 2026.3，`sinceBuild=263.0`；Core 字节码目标与插件的 Java 25 字节码目标分别配置。
 尚未逐一验证所有 IDE 产品和第三方主题的兼容性。
 
 ## 文档
