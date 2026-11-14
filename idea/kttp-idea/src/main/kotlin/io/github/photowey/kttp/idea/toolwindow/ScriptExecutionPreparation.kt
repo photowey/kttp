@@ -24,10 +24,12 @@ import com.intellij.psi.PsiManager
 import io.github.photowey.kttp.idea.gui.DraftOwnership
 import io.github.photowey.kttp.idea.gui.GuiDraft
 import io.github.photowey.kttp.idea.gui.GuiDraftService
+import io.github.photowey.kttp.idea.path.KttpDocumentSaver
 import io.github.photowey.kttp.idea.script.KttpRequestDeclaration
 import io.github.photowey.kttp.idea.script.sourceLines
 import io.github.photowey.kttp.idea.script.toKttpScript
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtPsiFactory
 
 /**
  * Pairs a prepared draft with its saved script file and selected request coordinates.
@@ -61,8 +63,12 @@ internal class ScriptExecutionPreparation(private val project: Project) {
         else {
             val file = RequestScriptFileCoordinator(project).generate(draft)
             val saved = project.getService(GuiDraftService::class.java).markGenerated(draft, file.path)
-            val declaration = (PsiManager.getInstance(project).findFile(file) as? KtFile)
-                ?.toKttpScript()?.findRequestDeclarations()?.singleOrNull()
+            val document = requireNotNull(FileDocumentManager.getInstance().getDocument(file)) {
+                "Cannot read the generated script."
+            }
+            // The saved text is sufficient for coordinates; physical PSI may query indexes on EDT.
+            val declaration = KtPsiFactory(project, false).createFile(file.name, document.text)
+                .toKttpScript()?.findRequestDeclarations()?.singleOrNull()
             PreparedScriptRequest(
                 saved,
                 file,
@@ -91,8 +97,7 @@ internal class ScriptExecutionPreparation(private val project: Project) {
         val declarations = psiFile?.toKttpScript()?.findRequestDeclarations().orEmpty()
         val index = declarations.indexOfFirst { it.element == element }
         require(index >= 0) { "The selected request is no longer available. Select a request again." }
-        documents.saveDocument(document)
-        check(!documents.isDocumentUnsaved(document)) { "Save the source script before sending this request." }
+        KttpDocumentSaver.save(document)
         val refreshed = RequestEditorProjectionLoader(project).load(declarations[index], file, index)
             .copy(executionMode = draft.executionMode)
         return PreparedScriptRequest(refreshed, file, index, declarations[index].sourceLines().asString())

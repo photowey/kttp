@@ -86,6 +86,29 @@ CLI 的 `--env-file` 接受**扁平字符串映射**，没有外层配置名：
 
 CLI 的 `--env-param key=value` 会覆盖文件中的值，没有用于选择 IDEA 配置名的 `--env` 参数。
 
+## 导入请求与变量
+
+编辑器的 **+ → Import Requests…** 将预览确认后的 cURL 或 Postman 请求插入当前脚本。
+Postman 的 `{{name}}` 占位符转换为 Kttp 值/环境引用，包括生成的 Kotlin 中的混合表达式。
+缺失值保留明确引用，使用时报错，不会替换为空字符串。
+
+Collection 可以不带 Environment 导入。Collection 值成为新命名配置的默认值，
+Environment 中启用的同名键覆盖默认值。静态嵌套引用会解析；无法解析或循环引用的配置值会省略并给出警告。
+导入保留已有配置，新名称添加 `postman_` 前缀。
+弹窗可在导入成功后激活新配置；仅在尚未选环境且只创建一个配置时默认启用。Folder 和 URL 变量保持请求范围。
+Postman JavaScript 和动态变量需要人工转换；导入不会翻译或执行 pre-request/test 脚本或断言。
+
+导入的 multipart/文件正文保留文件引用，执行生成的请求时才读取。
+字面相对路径使用选定的导入基目录，默认为当前工程；清空后回退到所选源文件所在目录。
+输入、预览和目标规则见[导入指南](gui.md#curl-postman)。
+
+
+**Import into** 沿用入口默认值：编辑器为 **Current Script**，侧栏为 **GUI Drafts**。
+选择 **New Script** 可在 `<工程>/.kttp/imports/` 下创建一个保留请求分组和顺序的脚本；目录和基于 Collection 名称的文件名可修改。
+同名时添加数字后缀，不覆盖已有文件；环境文件写在新脚本旁边。仅导入 Environment 时不创建空脚本。
+混合变量值生成普通 Kotlin 字符串模板和共享的 `String by env` 声明；复用兼容声明，同名冲突需先处理。
+
+
 ## 本地文件和客户端设置
 
 使用 `val payload: String by localFile("request.json")` 和 `body(payload)` 加载 UTF-8 文本正文。

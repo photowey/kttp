@@ -22,7 +22,7 @@ import kotlin.script.experimental.api.*
 import kotlin.script.experimental.dependencies.*
 import kotlin.script.experimental.dependencies.maven.MavenDependenciesResolver
 import kotlin.script.experimental.jvm.JvmDependency
-import kotlin.script.experimental.jvm.dependenciesFromCurrentContext
+import kotlin.script.experimental.jvm.dependenciesFromClassloader
 import kotlin.script.experimental.jvm.jvm
 
 /**
@@ -71,7 +71,11 @@ object KttpConfiguration : ScriptCompilationConfiguration({
     )
 
     jvm {
-        dependenciesFromCurrentContext(wholeClasspath = true)
+        // IDEA worker threads may have no context loader; keep the template's own loader available.
+        dependenciesFromClassloader(
+            classLoader = Thread.currentThread().contextClassLoader ?: Kttp::class.java.classLoader,
+            wholeClasspath = true
+        )
     }
 
     ide {

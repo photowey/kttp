@@ -22,6 +22,101 @@ GET("https://httpbin.org/get") {
 在项目中首次打开时，Kttp 会在 IDE 可用宽度内展开过窄的停靠工具窗口，并为导航区设置初始宽度。
 之后手动调整的窗口大小和保存的分隔条比例优先。
 
+## 导入 cURL 或 Postman
+
+在脚本编辑器中选择 **+ → Import Requests…**，将所选请求插入当前脚本。光标位于顶层请求或声明内部时，
+插入位置在该声明之后。如果导入代码复用的脚本属性声明位于后面，插入位置会移至这些声明之后，避免在初始化前使用属性。
+已有代码保留；脚本修改通过 IDE 写命令完成，支持编辑器 Undo。
+在 GUI **Sources** 区域点击 **Import Requests…**，则创建已保存的 GUI 草稿。
+弹窗左侧为输入来源，右侧上方为请求列表、下方为脚本和诊断页签。底部的 **Destination** 和 **Environment** 分别与上方两栏共用左右分隔条，缩放和拖动时保持对齐；目标标签按 IDE 字体宽度分配空间，悬停目标摘要可查看完整路径。状态和 Import/Cancel 按钮位于设置下方。拖动分隔条可调整宽度和预览高度。
+GUI 导入完成后，Sources 会清空搜索和过滤条件、展开 Drafts、选中第一条新请求，并显示本次导入数量。
+两个入口共用同一窗口，沿用现有 IDE 主题控件。
+
+1. 在 **Format** 中选择 **cURL** 或 **Postman**。输入字段支持 **Text** 与 **Paste**，或 UTF-8 **File**。
+2. Postman 可选择 Collection 和可选的 Environment；留空 Collection 可仅导入 Environment，此操作不修改当前脚本。
+   **Base directory** 默认使用当前工程解析相对上传路径；清空后，回退到所选源文件所在目录。
+   点击 Browse 时优先定位到已有来源文件，其次使用所选基础目录或当前工程目录。
+3. 点击 **Refresh Preview**，检查请求名称、方法、URL 和来源路径，选择要导入的请求，
+   并阅读 **Generated Script**、**Diagnostics** 和 **Retained Source**。
+   解析和预览在后台进行，**Cancel Preview** 可停止预览准备。
+4. 确认显示的目标位置后，点击 **Import** 写入所选内容。**Cancel** 关闭窗口，不修改脚本、草稿或环境文件。
+   输入、格式或目标变化会使预览失效，需要重新刷新。
+
+导入不会执行 curl、shell、JavaScript 或 HTTP 请求。致命输入错误会阻止导入；请求错误会阻止选择对应条目。
+带有不支持的脚本或需核对选项的请求默认不勾选；明确勾选仅表示接受其静态字段。
+不支持的来源内容会保存为导入目标旁的 `.import-report.txt` 文件，供后续核对，不会变成可执行的 Kotlin 或断言。
+
+### 支持的输入与限制
+
+| 输入 | 导入内容 | 边界 |
+| --- | --- | --- |
+| cURL | 单个 HTTP(S) 请求；方法、URL/查询、重复请求头、静态 Cookie、Basic/Bearer 凭据、文本/JSON、URL 编码数据、multipart 和支持的文件引用 | 支持 POSIX 引号、转义和反斜杠续行；未知选项、shell 展开、多次传输和不支持的组合会被拒绝 |
+| Postman Collection v2.0/v2.1 | 按原始顺序递归读取文件夹，保留名称/来源路径；字符串或结构化 URL、启用的查询/请求头/正文字段、raw 文本/JSON、urlencoded、form-data 和文件引用 | 按选择导入请求，省略禁用字段；不支持 Postman v1、Workspace 备份和云端同步 |
+| Postman 认证 | 继承的 No Auth、静态 Basic/Bearer，以及位于请求头或查询中的 API key | 请求配置优先于最近文件夹、外层文件夹和 Collection；OAuth 流程、签名和其他认证类型需要人工转换 |
+| Postman 脚本/变量 | 静态变量引用、带来源路径的诊断，以及供核对的不支持内容 | 不执行或翻译 pre-request/test JavaScript；动态变量和脚本生成的值需要人工处理 |
+
+cURL 导入不解释任意 Bash、cmd 或 PowerShell 程序，只接受明确的选项集合，不覆盖所有 curl 参数。
+部分响应显示/输出选项会省略并给出信息诊断；`--compressed` 需要核对，因为目标客户端的压缩行为可能不同。
+文件正文支持 `--data-binary @path` 和 `--json @path`；`--data @path` 等文件内容转换、标准输入和 Cookie 文件会被拒绝。
+URL 中的字面 `{` 或 `}` 即使使用 `--globoff` 也会被拒绝，因为 Kttp 将花括号视为路径参数。
+需要字面花括号时，请使用 `%7B` 和 `%7D`。接受转换前请检查诊断。
+
+cURL multipart 文件未显式设置 `;type=` 时，会保留支持的文件名到 MIME 类型映射。
+未知扩展名回退为 `application/octet-stream`，并给出需要明确勾选请求的警告。
+需要其他正文类型时请设置 `;type=`；导入不会通过读取文件内容推断类型。
+
+上传文件保留为引用。导入只对字面相对路径做语法解析，不读取或检查上传内容；显式执行生成的请求时才读取文件。
+粘贴命令中的相对路径使用界面显示的基础目录（默认为当前工程）；发送前请确认文件和运行时访问权限。
+multipart 文件名默认取解析后上传路径的最后一段，包括运行时由环境变量提供的路径；显式导入的文件名优先。
+
+Kttp/OkHttp 不支持 GET 和 HEAD 正文。Postman 导入中，这类正文及请求头名、查询参数名、
+form/multipart 字段名或 API-key 名中的变量引用会产生请求级错误，对应条目无法勾选，其他有效请求仍可导入。
+请在来源中将这些名称改为静态文本，或移除不支持的正文。支持字段值中的变量引用仍按下文处理。
+
+
+**Import into** 沿用入口默认值：编辑器为 **Current Script**，侧栏为 **GUI Drafts**。
+选择 **New Script** 可在 `<工程>/.kttp/imports/` 下创建一个保留请求分组和顺序的脚本；目录和基于 Collection 名称的文件名可修改。
+同名时添加数字后缀，不覆盖已有文件；环境文件写在新脚本旁边。仅导入 Environment 时不创建空脚本。
+混合变量值生成普通 Kotlin 字符串模板和共享的 `String by env` 声明；复用兼容声明，同名冲突需先处理。
+
+**Use imported environment** 仅在尚未选环境且只创建一个配置时默认勾选。
+否则保留已有选择，需主动启用；多个配置需明确选择。只有导入成功后才切换，使用 `postman_dev-2` 等实际创建的名称。
+cURL 导入不会创建空环境配置。
+
+### 变量与环境
+
+Environment 可选。Collection 变量提供默认值，Environment 中启用的同名键覆盖默认值。
+Folder 和 URL 变量保留请求范围。`{{name}}` 转换为 Kttp 值/环境引用；缺失键保留引用并给出诊断，
+使用时按现有环境缺失规则报错，不会替换为空字符串。Postman 动态变量需要人工转换。
+
+导入向 `kttp.env.json` 添加 `postman_<环境名>` 配置，同名时添加数字后缀，保留已有配置。
+只有 Collection 默认值时使用 `postman_<集合名>`。
+静态嵌套引用会在写入前解析；包含未定义值、动态变量或循环引用的配置值会省略并给出警告，
+避免将未解析的 `{{tokens}}` 写成可执行默认值。请核对导入后创建的配置名和激活选项。
+
+变量展开会缓存共享引用。单个展开值最多为 1,048,576 个 UTF-16 代码单元，缓存的引用文本和导入配置值的合计
+分别最多为 8,388,608 个代码单元。每个解析器最多替换 10,000 次、嵌套 64 层。大小或替换次数超限时，
+会在写入文件前拒绝导入；无法解析、循环或嵌套过深的环境值会省略。环境转换在弹窗后台线程执行，
+目标环境文件若被并发修改，则需刷新预览。
+
+导入提交和 GUI 脚本准备通过同步 VFS 操作完成本地写入，避免 IDEA 263 的文档保存仍在队列中时，
+外部 CLI 读到旧文件。保留 IDEA 的保存处理、编码和换行格式，不使用实验性的刷新 API。
+
+脚本导入将配置写在目标脚本旁；GUI 导入将环境和需要脚本的请求写入当前 IDE 的 `consoles/Kttp/` 目录。
+仅导入环境时，**Choose Environment Folder…** 可选择目标目录。
+现有环境查找规则仍适用：脚本目录的 `kttp.env.json` 优先于控制台文件，两处配置不会合并。
+
+### GUI 草稿与关联脚本
+
+编辑器可表示的请求成为可编辑的已保存草稿，支持 **Quick Request** 和 **Generate Script**。
+自定义方法、multipart/文件正文及需要 Kotlin 的混合变量表达式会保留关联脚本，默认使用 **Follow Script**。
+请求语义保留在脚本中；编辑器无法表示时，不能使用 Quick Request。
+通过 **Open Script** 编辑关联脚本，再用 **Follow Script → Send** 执行。
+
+生成的环境变量 URL 拼接在请求编辑器和脚本请求树中显示为 `${baseUrl}/path`。
+该显示不执行脚本，变量值在运行时解析。其他动态 URL 显示 **Script URL (open source to edit)**。
+这类请求仍为只读，并使用 Follow Script。
+
 ## 执行模式
 
 | 模式 | 执行内容 | 默认适用对象 |
@@ -60,8 +155,14 @@ Detach 只复制提取出的 HTTP 模型。需要原始 Kotlin 逻辑和回调�
 ## 字段和侧栏过滤
 
 通过 **Params**、**Headers**、**Body** 和 **Auth** 编辑支持的请求字段。
-GUI 环境引用要求 `${env:baseUrl}` 占据整个字段，不支持 `${env:baseUrl}/users` 这样的字符串插值。
+GUI 环境引用要求 `${baseUrl}` 占据整个字段，不支持 `${baseUrl}/users` 这样的字符串插值。
 脚本使用普通 Kotlin 插值。JSON/Raw 正文字段也支持 `@file:path/to/body.json`。
+仍接受旧的 `${env:name}` 输入，重新显示时统一为 `${name}`。在整个输入前加 `\` 可原样发送文本，
+例如 `\${API_TOKEN}` 会发送 `${API_TOKEN}`，不解析环境值。已保存的字面量保留原有类型，重新打开时按需添加转义。
+Sources 提示根据解析后的值标注来源，并识别字面量转义。
+
+分离出的草稿在两种 GUI 执行模式下保留原脚本的环境文件查找位置；Follow Script 生成脚本时，
+不会将环境查找切换到生成文件的目录。导入脚本仍使用自身的环境位置，没有文件关联的独立草稿使用 Consoles/Kttp。
 
 脚本文件行显示请求总数，请求标签表示是否支持 Quick Request：
 
@@ -116,5 +217,5 @@ GUI 环境引用要求 `${env:baseUrl}` 占据整个字段，不支持 `${env:ba
 Quick Request 跳过这些阶段。
 
 **HTTP/2** 复选框选择 `H2_PRIOR_KNOWLEDGE`，不是自动协商 HTTP/2。
-HTTP 文件和 Postman 导入操作仍是占位功能，1.1.0 尚未实现 cURL 导入。
+HTTP 文件导入仍为占位功能。
 直接 GUI 模型不能保留的行为见 [Kotlin 脚本](scripting.md)。

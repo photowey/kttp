@@ -130,9 +130,18 @@ CLI `--env-file` instead accepts a flat string map:
 `--env-param key=value` can be repeated and overrides the flat file's values. There is no CLI `--env` selector for IDEA
 profile names.
 
-GUI fields use a separate value codec: `${env:baseUrl}` must occupy the whole field. `${env:baseUrl}/users` is not
+GUI fields use a separate value codec: `${baseUrl}` must occupy the whole field. `${baseUrl}/users` is not
 interpolation there. Kotlin scripts use normal `"$baseUrl/users"` interpolation. JSON/Raw GUI bodies also support
-`@file:path/to/body.json`.
+`@file:path/to/body.json`. Legacy `${env:name}` input remains accepted; canonical display uses `${name}`.
+A leading backslash forces literal input: `\${TOKEN}` sends `${TOKEN}` without lookup. Persisted literals remain literal
+and are escaped on redisplay when ambiguous. Do not put GUI placeholders into Kotlin scripts: use `by env` and Kotlin
+interpolation there. GUI drafts detached from scripts keep their source environment lookup location when switching
+Quick Request/Follow Script; generation does not change it. Imported scripts retain their own environment location.
+
+Postman import converts `{{name}}` references to these Kttp values/delegates. Collection defaults and enabled
+Environment overrides create new named profiles without changing the active selection. Static nested aliases resolve;
+unresolved or cyclic profile entries are omitted with warnings, while request references remain explicit. Mixed
+expressions requiring Kotlin stay in linked scripts when the GUI cannot represent them. See [importing.md](importing.md).
 
 ## Files
 

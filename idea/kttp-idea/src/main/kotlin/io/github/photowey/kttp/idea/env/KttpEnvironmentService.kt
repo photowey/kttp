@@ -20,9 +20,11 @@ import com.intellij.json.psi.JsonFile
 import com.intellij.json.psi.JsonObject
 import com.intellij.json.psi.JsonProperty
 import com.intellij.json.psi.JsonStringLiteral
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
@@ -65,7 +67,7 @@ class KttpEnvironmentService(private val project: Project) {
      */
     fun getAvailableEnvironments(scriptFile: VirtualFile? = null): List<KttpEnvironment> {
         val envFile = findEnvFile(scriptFile) ?: return emptyList()
-        return parseEnvironments(envFile)
+        return ApplicationManager.getApplication().runReadAction(Computable { parseEnvironments(envFile) })
     }
 
     /**

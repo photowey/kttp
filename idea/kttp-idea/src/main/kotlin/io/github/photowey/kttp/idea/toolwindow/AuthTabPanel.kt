@@ -405,8 +405,7 @@ class AuthTabPanel : JPanel(BorderLayout()) {
 
     private fun refreshSummary() {
         fun sourceLabel(value: String): String = when {
-            value.trim().startsWith("\${env:") -> "env"
-            value.trim().startsWith("@file:") -> "file"
+            GuiValueRefCodec.parse(value) is ValueRef.Env -> "env"
             value.isBlank() -> "none"
             else -> "literal"
         }

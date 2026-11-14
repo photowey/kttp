@@ -3,7 +3,7 @@
 ## 安装 IDEA 插件
 
 开发请使用 JDK 25。插件以 IntelliJ IDEA 2026.3 为目标，依赖 Kotlin 插件，以及 `plugin.xml`
-中声明的平台语言和 JSON 模块。Kttp 1.1.0 声明兼容构建号 `263.0` 至 `263.*`；
+中声明的平台语言和 JSON 模块。Kttp 1.2.0 声明兼容构建号 `263.0` 至 `263.*`；
 较早的 IDE 请使用 Kttp 1.0.1 等兼容旧版。
 
 如有已发布的 [GitHub Release](https://github.com/photowey/kttp/releases)，下载其中的
@@ -55,6 +55,22 @@ GET("https://httpbin.org/get", name = "first-request") {
 在 GUI 请求编辑器中只读；需要修改时，编辑源脚本或使用 **Detach**。
 
 各按钮的行为和两种模式的区别见 [GUI 请求](gui.md)。
+
+## 导入已有请求
+
+使用脚本编辑器的 **+ → Import Requests…** 将请求插入当前脚本；或在 GUI **Sources** 区域点击
+**Import Requests…**，创建已保存的草稿。选择 **cURL**，粘贴命令，再点击 **Refresh Preview**：
+
+```bash
+curl 'http://127.0.0.1:8080/health' -H 'Accept: application/json'
+```
+
+检查目标位置、生成的脚本和诊断，再点击 **Import**，此过程不会访问端点。
+**Cancel** 保持目标不变。导入 Postman 时，选择 **Postman**，提供 Collection v2.0/v2.1、
+可选的 Environment，或仅提供 Environment。在导入弹窗核对新建的环境配置和激活选项。
+
+通过 GUI 导入的普通请求成为可编辑草稿；需要脚本功能的请求保留关联脚本，使用 **Follow Script**。
+发送转换后的请求前，请查看[导入覆盖范围与限制](gui.md#curl-postman)。
 
 ## 使用独立 CLI
 

@@ -36,8 +36,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes xvfb
 
-      - name: Run module tests and build installable plugin
-        run: xvfb-run --auto-servernum ./gradlew --no-daemon test :idea:kttp-idea:buildPlugin :core:kttp-cli:shadowJar
+      - name: Run module tests, verify development sandbox and build installable plugin
+        run: xvfb-run --auto-servernum ./gradlew --no-daemon test :idea:kttp-idea:verifyKttpSandboxes :idea:kttp-idea:buildPlugin :core:kttp-cli:shadowJar
 
       - name: Verify and stage plugin ZIP and CLI fat JAR
         run: python3 scripts/release.py stage --output build/ci-distributions

@@ -58,6 +58,9 @@ class RequestExecutionPreferences : PersistentStateComponent<RequestExecutionPre
     fun modeFor(id: String, fallback: RequestExecutionMode): RequestExecutionMode =
         settings.modes[id]?.let { value -> RequestExecutionMode.entries.find { it.name == value } } ?: fallback
 
+    /** Applies the remembered mode without changing request data or persistence metadata. */
+    fun applyTo(draft: GuiDraft): GuiDraft = draft.copy(executionMode = modeFor(draft.id, draft.executionMode))
+
     @Synchronized
     fun remember(id: String, mode: RequestExecutionMode) {
         settings.modes[id] = mode.name

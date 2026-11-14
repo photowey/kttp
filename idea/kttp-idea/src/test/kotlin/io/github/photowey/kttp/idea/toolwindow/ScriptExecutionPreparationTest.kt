@@ -64,6 +64,31 @@ class ScriptExecutionPreparationTest : BasePlatformTestCase() {
         }
     }
 
+    fun testGeneratedEnvironmentRequestCoordinatesMatchSavedDocument() {
+        val service = project.getService(GuiDraftService::class.java)
+        val draft = service.createEmptyDraft().copy(
+            request = RequestSpec(
+                method = io.github.photowey.kttp.core.enums.HttpMethod.POST,
+                target = RequestTarget(ValueRef.Env("baseUrl")),
+                headers = listOf(io.github.photowey.kttp.idea.gui.HeaderSpec("X-Token", ValueRef.Env("TOKEN"))),
+                body = io.github.photowey.kttp.idea.gui.BodySpec.Raw(ValueRef.Literal("GET(ignored)\nhello"))
+            )
+        )
+        val prepared = ScriptExecutionPreparation(project).prepare(draft, null, null)
+        try {
+            val document = FileDocumentManager.getInstance().getDocument(prepared.file)!!
+            val lines = document.text.lines()
+            val first = lines.indexOfFirst { it.startsWith("POST(") } + 1
+            val last = lines.indexOfLast { it == "}" } + 1
+            assertTrue(first > 1)
+            assertEquals("$first:$last", prepared.requestLines)
+            assertEquals(document.text, File(prepared.file.path).readText())
+        } finally {
+            service.deleteDraft(draft.id)
+            File(prepared.file.path).delete()
+        }
+    }
+
     fun testImportedRequestSavesPendingEditsFromAccessibilityCallbackWithoutImplicitWriteIntent() {
         val file =
             myFixture.addFileToProject("accessible-source.kttp.kts", "GET(\"http://localhost/original\")") as KtFile
@@ -116,6 +141,23 @@ class ScriptExecutionPreparationTest : BasePlatformTestCase() {
         )
         assertEquals(document.text, File(file.virtualFile.path).readText())
         assertFalse(FileDocumentManager.getInstance().isDocumentUnsaved(document))
+    }
+
+    fun testCleanReadOnlySourceCanStillBePreparedWithoutWritingIt() {
+        val source = "GET(\"https://example.test/read-only\")\n"
+        val file = myFixture.addFileToProject("read-only.kttp.kts", source) as KtFile
+        val selected = file.toKttpScript()!!.findRequestDeclarations().single()
+        val draft = RequestEditorProjectionLoader(project).load(selected, file.virtualFile, 0)
+        WriteCommandAction.runWriteCommandAction(project) { file.virtualFile.isWritable = false }
+        try {
+            val prepared = ScriptExecutionPreparation(project).prepare(draft, file.virtualFile, selected)
+            assertEquals(file.virtualFile, prepared.file)
+            assertEquals(0, prepared.declarationIndex)
+            assertEquals(source, File(file.virtualFile.path).readText())
+            assertFalse(FileDocumentManager.getInstance().isFileModified(file.virtualFile))
+        } finally {
+            WriteCommandAction.runWriteCommandAction(project) { file.virtualFile.isWritable = true }
+        }
     }
 
     fun testDeletedRequestCannotFallBackToItsOldIndexOrWholeFile() {

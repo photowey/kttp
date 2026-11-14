@@ -52,6 +52,33 @@ requests use their source script. The generator checks file fingerprints to pres
 editor changes. A completed send updates draft metadata only if the draft's identity and revision still match,
 preventing the result from overwriting a different request after the user changes selection.
 
+## Request import
+
+The IDEA module's `importing` package separates static source parsing from preview, conversion and persistence:
+
+```text
+cURL / Postman → parser registry → ImportBundle
+                                  → request adapter / script renderer
+                                  → shared preview and selection
+                                  → script / GUI draft / environment writer
+```
+
+`RequestImportParser` strategies return immutable requests, variables, environments, source paths and diagnostics
+without IntelliJ or Swing dependencies. The explicit registry selects the format. The unified model retains the HTTP
+method as a string, so custom methods survive GUI enum limits. Postman folders contribute order, source paths and
+inherited settings rather than a separate collection workspace.
+
+The host adapter reuses `RequestSpec`, `GuiDraft` and `GuiScriptGenerator`. Script generation remains host code because
+the existing generator uses Kotlin/IDE APIs. Requests the GUI cannot represent are kept in linked scripts and executed
+through Follow Script. The dialog reads inputs and prepares previews in a background worker, invalidates stale results,
+and commits only an explicit, current selection through `RequestImportCoordinator` and destination writers.
+
+The environment writer adds non-conflicting profiles without changing the active selection itself. After a successful
+commit, the dialog applies the activation choice; it defaults to the sole new profile only when no environment is selected.
+Static aliases are resolved; unresolved values stay absent with diagnostics. Adding a format requires a parser and registry entry, plus explicit
+model/adapter changes and checks when it introduces new request semantics. Import does not execute the source command,
+Postman scripts or HTTP requests.
+
 ## Responses and persistence
 
 The runtime captures request/response metadata, saves response files and provides a bounded UI preview. The saved

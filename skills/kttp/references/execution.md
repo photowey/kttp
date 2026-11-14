@@ -5,7 +5,7 @@ Contents: [runtime](#runtime), [CLI](#cli), [IDEA](#idea), [GUI modes](#gui-mode
 ## Runtime
 
 The skill is usable without the Kttp source checkout. Execution still needs either the installed IDEA plugin or a
-standalone Kttp CLI fat JAR, plus a compatible JDK. Kttp 1.1.0 targets IDEA 2026.3 and declares builds `263.0` through
+standalone Kttp CLI fat JAR, plus a compatible JDK. Kttp 1.2.0 targets IDEA 2026.3 and declares builds `263.0` through
 `263.*`; earlier IDEs need a compatible older plugin such as Kttp 1.0.1. Development uses JDK 25; JDK 21 or 25 is
 recommended for script execution. Check the user's actual runtime version before applying these instructions.
 
@@ -126,7 +126,11 @@ generated GUI code. **Detach** creates an editable supported projection and swit
 **Sources** separates saved **Drafts**, current **Project** content roots/modules, and the running IDE's **Kttp**
 console scripts. Project scanning omits IDE-excluded and version-control-ignored files; it is not limited to `.kttp/`.
 The first project opening supplies initial docked/navigation widths; later manual sizing and saved splitters take
-precedence. cURL import is not implemented in either the editor or GUI; this skill can translate pasted cURL to source.
+precedence. **Import Requests…** in **Sources** creates saved drafts for supported cURL/Postman requests and linked
+scripts for requests needing Follow Script. In the editor, **+ → Import Requests…** inserts into the active script.
+Both use a format selector and explicit **Refresh Preview → Import** workflow. Postman Collection v2.0/v2.1 accepts an
+optional Environment; an Environment can also be imported alone. Import does not execute HTTP. See
+[importing.md](importing.md) for variable precedence, cancellation, unsupported scripts and fidelity limits.
 
 Follow has JVM startup and compilation costs, including seconds on a cold run; Quick avoids those phases. Do not infer
 total latency from HTTP timing alone or promise the two modes have equal latency.
@@ -148,13 +152,13 @@ full body.
 | Unresolved `OkHttpExecutor`, `json {}`, `assert { status(...) }`, or builder `name` | Use registered request functions, `body(serializedJson)`, `.then { assertStatus(...) }`, and `name = ...` as a request argument |
 | Status/body properties unavailable in `.then`                                       | Receiver is `ThenContext`; use `statusCode`, cached `body`, `decode`, or `getResponse()`                                        |
 | `No response available` after chained `.then`                                       | Combine operations in one deferred callback; the mapped-holder overload expects a response already received                     |
-| Request-result delegate has no applicable `getValue`                                | Check the loaded runtime version and explicit result type; Kttp 1.1.0 supplies operator getters without a compatibility extension |
+| Request-result delegate has no applicable `getValue`                                | Check the loaded runtime version and explicit result type; Kttp 1.2.0 supplies operator getters without a compatibility extension |
 | Cannot access holder `execute()`                                                    | It is internal; use the tested delegated login result rather than invoking it directly                                          |
 | `var ... by variable()` fails to compile                                            | Use explicit `vars.setValue` / `vars.getValue` as in the stored-values recipe                                                   |
 | Outer `vars`/builder member cannot be called with an implicit receiver              | Capture it at script level, for example `val savedValues = vars`, then use that local value inside the nested DSL block         |
 | Missing environment                                                                 | Check selected IDE profile or flat CLI keys; error text mentioning `--env` does not establish a supported flag                  |
 | Wrong local file                                                                    | Check `--base-dir`, script vs project location, and whether `File` or `localFile` is used                                       |
-| `kttp-cli.jar not found`                                                            | Installed users need the full plugin ZIP; source developers can build `shadowJar` and restart the intended sandbox              |
+| `kttp-cli.jar not found`                                                            | Installed users need the full plugin ZIP; source developers can run `:idea:kttp-idea:verifyKttpSandboxes`, then launch `:idea:kttp-idea:runIde`, which prepares its own bundled CLI |
 | Requests differ between GUI and script                                              | Check Execution mode, saved source, environment, callback/client settings, and Quick projection limits                          |
 | Login unexpectedly skipped                                                          | Check stored delegated-property values and `--storage-dir`; use a fresh in-memory invocation                                    |
 | HTTP 2xx but command fails                                                          | Inspect `then` assertion/extraction errors; HTTP arrival and script success are separate                                        |

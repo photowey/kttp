@@ -77,7 +77,7 @@ The convenience `file` helper does not infer a MIME type from the filename.
 ## Login and dependent request
 
 This API returns `{"token":"..."}` from `/login` and `{"id":42}` from `/users/42`. Give the mapped login result a
-delegated property. Its callback's last expression supplies the value. Kttp 1.1.0 supplies the operator getters for
+delegated property. Its callback's last expression supplies the value. Kttp 1.2.0 supplies the operator getters for
 request-result properties directly; no compatibility extension is needed.
 
 ```kotlin
@@ -115,7 +115,7 @@ distinct property names for unrelated workflows sharing storage and non-null map
 `val token = POST(...).then { ... }` assigns a holder, not a token. Keep the `by` and explicit result type above. Do not
 call the holder's `execute()` directly: it is internal to the runtime. Avoid creating a second login to extract the same
 token or reading a consumed response body twice. Older runtimes may need a compatibility getter; check the actual
-runtime version rather than adding one to a Kttp 1.1.0 script.
+runtime version rather than adding one to a Kttp 1.2.0 script.
 
 ## Reuse Kotlin functions
 

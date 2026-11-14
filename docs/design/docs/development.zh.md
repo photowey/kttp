@@ -3,16 +3,23 @@
 ## 本地开发
 
 将仓库根目录作为 Gradle 工程导入，并使用 JDK 25。Gradle Wrapper 固定为 Gradle 9.7.0，
-同时校验官方发行包的 SHA-256。与本机相关的设置请放在个人的 `~/.gradle/gradle.properties` 中。
+同时校验官方发行包的 SHA-256。本机设置请放在 Gradle user home 下的 `gradle.properties` 中，
+默认位置为 `~/.gradle`。如果 IDEA 配置了其他 Gradle user home，其构建会从该位置读取设置。
 
 ```bash
 ./gradlew test
 ./gradlew :idea:kttp-idea:buildPlugin
 ./gradlew :core:kttp-cli:shadowJar
+./gradlew :idea:kttp-idea:verifyKttpSandboxes
 ./gradlew :idea:kttp-idea:runIde
 ```
 
-`runIde` 会启动安装当前插件的开发 IDEA 实例，沙箱位于 `idea/kttp-idea/build/idea-sandbox/`。
+`runIde` 会启动安装当前插件的开发 IDEA 实例，沙箱位于
+`.intellijPlatform/sandbox/kttp-idea/IU-2026.3/`。`runIde` 使用 `config_runIde`、`plugins_runIde`、
+`system_runIde` 和 `log_runIde`；正式 ZIP 使用默认 `prepareSandbox` 的输出。
+每个沙箱准备任务都会将 CLI 和脚本依赖复制到自己的插件目录。
+`verifyKttpSandboxes` 会准备这两个目录、逐文件比较字节，并确认内置 CLI 与 `shadowJar` 一致。
+
 构建目标为 IDEA 2026.3，`sinceBuild=263.0`；Core 字节码目标与插件的 Java 25 字节码目标分别配置。
 尚未逐一验证所有 IDE 产品和第三方主题的兼容性。
 
@@ -41,7 +48,7 @@ uv run --locked mkdocs build --strict
 ## GitHub 工作流
 
 - **CI** 在 `main`、Pull Request 和手动触发时运行，也可由 Release 复用。它会测试 Gradle 模块、
-  构建插件 ZIP 和 CLI fat JAR、检查分发包内容，并严格构建文档站。
+  校验开发沙箱与打包沙箱的内容、构建插件 ZIP 和 CLI fat JAR、检查分发包内容，并严格构建文档站。
 - 推送**稳定版本标签 `vX.Y.Z`** 会启动 Release 校验。标签版本须与去掉 `-SNAPSHOT` 后缀的
   Gradle `project.version` 一致，沿用构建产物的命名规则。不接受前导零和预发布后缀。
   例如 `1.0.0-SNAPSHOT` 对应标签 `v1.0.0`。

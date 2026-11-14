@@ -88,6 +88,33 @@ CLI `--env-file` expects a **flat map of strings**, rather than that profile wra
 
 CLI `--env-param key=value` overrides file values. There is no CLI `--env` profile selector.
 
+## Imported requests and variables
+
+The editor's **+ → Import Requests…** inserts reviewed cURL or Postman requests into the current script. Imported
+Postman `{{name}}` placeholders become Kttp value/environment references, including mixed expressions in generated
+Kotlin. Missing values remain explicit references and fail when used; they are not replaced with empty strings.
+
+A Collection can be imported without an Environment. Collection values become defaults in a new named profile;
+enabled Environment values override matching keys. Static nested aliases are resolved, while unresolved or cyclic
+profile values are omitted with warnings. Import preserves existing profiles and prefixes new names with `postman_`.
+The import dialog can activate a created profile after a successful commit; the sole profile defaults to active only when no environment is selected.
+Folder and URL variables remain request-local. Postman JavaScript and dynamic variables require manual conversion;
+no pre-request/test script or assertion is translated or executed during import.
+
+Imported multipart/file bodies retain file references and read them only when the generated request runs. Relative
+literal paths use the chosen import base directory, which defaults to the current project. Clearing the field falls back
+to the selected source file's directory.
+See [the import guide](gui.md#import-curl-or-postman) for input, preview and destination rules.
+
+
+**Import into** preserves the entry default: **Current Script** in the editor and **GUI Drafts** in the sidebar.
+Choose **New Script** to create one grouped file under `<project>/.kttp/imports/`, with an editable directory and file name
+based on the Collection name. Name collisions receive numeric suffixes; existing files are not overwritten.
+The imported environment is written beside that script. Environment-only imports do not create empty scripts.
+Mixed Postman values generate ordinary Kotlin string templates and shared `String by env` declarations; compatible
+existing delegates are reused, while conflicting declarations require review.
+
+
 ## Local files and client settings
 
 Use `val payload: String by localFile("request.json")` and `body(payload)` to load a UTF-8 text body. Relative paths

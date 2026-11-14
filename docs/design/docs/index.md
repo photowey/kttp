@@ -35,7 +35,7 @@ See the [execution rules](gui.md) before switching modes.
 
 - [Quick start](quick-start.md): build or install the plugin and run a first request.
 - [Kotlin scripting](scripting.md): request builders, assertions, environment profiles and local files.
-- [GUI requests](gui.md): drafts, script links, responses, history and execution limits.
+- [GUI requests](gui.md): cURL/Postman import, drafts, script links, responses, history and execution limits.
 - [CLI reference](cli.md): compile, execute and select requests outside the IDE.
 - [Agent Skill](agent-skills.md): teach a coding agent Kttp's actual syntax and workflow.
 - [Architecture](architecture.md): the DSL, CLI and IDEA integration boundaries.
@@ -43,9 +43,13 @@ See the [execution rules](gui.md) before switching modes.
 
 ## Current scope
 
-The plugin targets IntelliJ IDEA 2026.3 with `sinceBuild=263.0`. Use JDK 25 for development; JDK 21 or 25 is recommended
-for script execution. Other IDE products and third-party themes have not been independently verified. HTTP-file and
-Postman import actions are placeholders.
+Kttp 1.2.0 targets IntelliJ IDEA 2026.3, builds `263.0` through `263.*`. Use JDK 25 for development; JDK 21 or 25 is
+recommended for script execution. Other IDE products and third-party themes have not been independently verified.
+
+Import cURL or Postman Collection v2.0/v2.1 into a script or GUI drafts after reviewing a preview. Postman Environment
+is optional and can be imported on its own. Unsupported scripts, dynamic values and options require diagnostic review;
+import does not send requests. See [GUI requests](gui.md#import-curl-or-postman) for coverage and limits.
+HTTP-file import remains a placeholder.
 
 Each documentation build describes its source revision. The live Pages site follows published stable releases;
 pushes to `main` validate the site without deploying it.

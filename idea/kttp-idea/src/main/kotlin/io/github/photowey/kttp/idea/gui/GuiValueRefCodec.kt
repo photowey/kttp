@@ -20,8 +20,9 @@ import kotlinx.serialization.json.Json
 
 /**
  * A leading backslash forces literal text, including whitespace and reference markers.
- * Display escapes only ambiguous literals and leading backslashes. Ordinary env/file
- * references retain their shorthand; @ref: JSON preserves metadata shorthand cannot hold.
+ * Display escapes only ambiguous literals and leading backslashes. Environment references
+ * display as ${name} and accept legacy ${env:name}. Files use @file:path; @ref: JSON
+ * preserves metadata that shorthand cannot hold.
  * Invalid or disallowed reference input always remains literal.
  *
  * @author photowey
@@ -29,14 +30,14 @@ import kotlinx.serialization.json.Json
  * @since 2026/11/05
  */
 object GuiValueRefCodec {
-    private val envRegex = Regex("""\$\{env:([A-Za-z0-9_.-]+)}""")
+    private val envRegex = Regex("""\$\{(?:env:)?([A-Za-z0-9_.-]+)}""")
     private const val filePrefix = "@file:"
     private const val referencePrefix = "@ref:"
     private const val literalEscape = "\\"
 
     fun toDisplayValue(valueRef: ValueRef): String = when (valueRef) {
         is ValueRef.Literal -> displayLiteral(valueRef.value)
-        is ValueRef.Env -> displayReference(valueRef, "\${env:${valueRef.key}}", allowLocalFile = false)
+        is ValueRef.Env -> displayReference(valueRef, "\${${valueRef.key}}", allowLocalFile = false)
         is ValueRef.LocalFile -> displayReference(valueRef, "$filePrefix${valueRef.path}", allowLocalFile = true)
         is ValueRef.OpaqueScript -> valueRef.raw
     }

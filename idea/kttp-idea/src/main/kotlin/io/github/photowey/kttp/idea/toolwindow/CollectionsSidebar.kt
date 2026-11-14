@@ -16,7 +16,6 @@
 
 package io.github.photowey.kttp.idea.toolwindow
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbService
@@ -30,6 +29,8 @@ import com.intellij.util.ui.JBUI
 import io.github.photowey.kttp.idea.gui.GuiDraft
 import io.github.photowey.kttp.idea.gui.GuiDraftService
 import io.github.photowey.kttp.idea.gui.GuiMode
+import io.github.photowey.kttp.idea.importing.ImportCommitResult
+import io.github.photowey.kttp.idea.importing.ui.ImportDraftButton
 import io.github.photowey.kttp.idea.path.KttpFileNavigation
 import io.github.photowey.kttp.idea.script.KttpRequestDeclaration
 import java.awt.BorderLayout
@@ -38,7 +39,6 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
-import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JPopupMenu
@@ -118,6 +118,10 @@ class CollectionsSidebar(
         { pendingSelectionKey = it }, tree::clearSelection, { invalidateCache(it) },
         onScriptFileChanged, { reloadFileNode(it) })
     private val sourcesHeader = JLabel("Sources", SwingConstants.LEADING)
+    private val importSummary = JLabel().apply {
+        border = JBUI.Borders.emptyTop(6)
+        isVisible = false
+    }
 
     /**
      * 占位子节点：使文件节点显示展开箭头，展开后替换为真实请求节点
@@ -134,24 +138,10 @@ class CollectionsSidebar(
         preferredSize = JBUI.size(280, 0)
         border = JBUI.Borders.empty()
 
-        val buttonPanel = JPanel(BorderLayout(4, 4)).apply {
-            val draftActions = JPanel(BorderLayout(4, 0)).apply {
-                add(JButton("New Draft", AllIcons.General.Add).apply {
-                    toolTipText = "Create a new detached GUI draft"
-                    addActionListener { onRequestSelected(null, null, null, false) }
-                }, BorderLayout.CENTER)
-                add(JButton(AllIcons.Actions.Refresh).apply {
-                    isFocusable = false
-                    toolTipText = "Refresh drafts and scripts"
-                    addActionListener { refreshCollections() }
-                }, BorderLayout.EAST)
-            }
-            add(draftActions, BorderLayout.NORTH)
-            add(JButton("Add Request", AllIcons.General.Add).apply {
-                toolTipText = "Append a request to the selected script, or create a temporary script"
-                addActionListener { addRequestToScript() }
-            }, BorderLayout.SOUTH)
-        }
+        val buttonPanel = SidebarActionsPanel(
+            { onRequestSelected(null, null, null, false) }, ::refreshCollections, ::addRequestToScript,
+            ImportDraftButton(project, ::acceptImportedRequests)
+        )
         val controlsPanel = JPanel().apply {
             layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
             border = JBUI.Borders.emptyBottom(8)
@@ -171,14 +161,17 @@ class CollectionsSidebar(
         val requestSection = JPanel(BorderLayout()).apply {
             add(sourcesHeader, BorderLayout.NORTH)
             add(requestTopPanel, BorderLayout.CENTER)
+            add(importSummary, BorderLayout.SOUTH)
         }
 
 
         // 左侧上下分栏：上请求、下响应
-        add(WorkspaceUi.split(
-            true, "Kttp.SourcesResponses.Proportion", 0.64f,
-            WorkspaceUi.surface(requestSection), WorkspaceUi.surface(responses.component)
-        ), BorderLayout.CENTER)
+        add(
+            WorkspaceUi.split(
+                true, "Kttp.SourcesResponses.Proportion", 0.64f,
+                WorkspaceUi.surface(requestSection), WorkspaceUi.surface(responses.component)
+            ), BorderLayout.CENTER
+        )
 
         // 初始显示空状态（等待文件扫描）
         cardLayout.show(requestCardPanel, "empty")
@@ -239,6 +232,20 @@ class CollectionsSidebar(
     fun refreshCollections() = onOwner {
         collectionRefreshTimer.stop()
         loadCollectionsAsync()
+    }
+
+    /** Reveals the first committed draft independently of the previous search, filter and tree selection. */
+    internal fun acceptImportedRequests(result: ImportCommitResult) {
+        result.drafts.firstOrNull()?.let { draft ->
+            pendingSelectionKey = "draft:${draft.id}"
+            searchControls.search.text = ""
+            searchControls.filter.selectedItem = FileProjectionFilter.ALL
+            val count = result.drafts.size
+            importSummary.text = "Imported $count ${if (count == 1) "request" else "requests"} into Drafts"
+            importSummary.isVisible = true
+            onDraftSelected(draft)
+        }
+        refreshCollections()
     }
 
     private fun addRequestToScript() {
@@ -380,8 +387,16 @@ class CollectionsSidebar(
     ) {
         val state = selection.capture()
         val groups = SidebarFileGroups(
-            sortAndFilterFiles(files.project.filter { it.isValid }, filter),
-            sortAndFilterFiles(files.kttp.filter { it.isValid }, filter)
+            RequestProjectionPresentation.sortAndFilterFiles(
+                files.project.filter { it.isValid },
+                filter,
+                parseCache::summary
+            ),
+            RequestProjectionPresentation.sortAndFilterFiles(
+                files.kttp.filter { it.isValid },
+                filter,
+                parseCache::summary
+            )
         )
         sourcesHeader.text = "Sources (${drafts.size + groups.project.size + groups.kttp.size})"
         rootNode.removeAllChildren()
@@ -403,7 +418,11 @@ class CollectionsSidebar(
             SidebarPresentation.preferredSelectionKey(state.selectedKey, pendingSelectionKey)?.let { key ->
                 selection.find(key)?.let {
                     selection.restore(it)
-                    if (key == pendingSelectionKey) pendingSelectionKey = null
+                    if (key == pendingSelectionKey) {
+                        tree.expandPath(it.parentPath)
+                        tree.scrollPathToVisible(it)
+                        pendingSelectionKey = null
+                    }
                 }
             }
             cardLayout.show(requestCardPanel, "tree")
@@ -439,21 +458,6 @@ class CollectionsSidebar(
         return fileNode
     }
 
-    private fun sortAndFilterFiles(files: List<VirtualFile>, filter: FileProjectionFilter): List<VirtualFile> {
-        return files
-            .filter { file ->
-                val summary = parseCache.summary(file.path) ?: FileProjectionSummary()
-                RequestProjectionPresentation.matchesFilter(summary, filter)
-            }
-            .sortedWith(
-                compareBy<VirtualFile> { file ->
-                    RequestProjectionPresentation.sortWeight(parseCache.summary(file.path) ?: FileProjectionSummary())
-                }.thenBy { file ->
-                    file.name.lowercase()
-                }
-            )
-    }
-
     fun refreshResponseCollections() = onOwner { responses.refresh() }
 
     /**
@@ -464,9 +468,18 @@ class CollectionsSidebar(
      * @since 2026/02/21
      */
     internal enum class GroupNode(val displayName: String, val description: String) {
-        DRAFTS("Drafts", "GUI requests saved with Save Draft in this project. Opening a script does not create a draft."),
-        PROJECT("Project", "Scripts in this IDEA project's content roots, including modules. Excluded and VCS-ignored files are omitted."),
-        KTPP("Kttp", "Scripts in this IDEA installation's config/consoles/Kttp directory. Other IDE installations and development sandboxes have separate storage.");
+        DRAFTS(
+            "Drafts",
+            "GUI requests saved with Save Draft in this project. Opening a script does not create a draft."
+        ),
+        PROJECT(
+            "Project",
+            "Scripts in this IDEA project's content roots, including modules. Excluded and VCS-ignored files are omitted."
+        ),
+        KTPP(
+            "Kttp",
+            "Scripts in this IDEA installation's config/consoles/Kttp directory. Other IDE installations and development sandboxes have separate storage."
+        );
 
         override fun toString(): String = displayName
     }

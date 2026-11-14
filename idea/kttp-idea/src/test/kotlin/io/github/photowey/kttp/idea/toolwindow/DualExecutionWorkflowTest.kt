@@ -365,6 +365,58 @@ class DualExecutionWorkflowTest : BasePlatformTestCase() {
         }
     }
 
+    fun testDetachedDraftKeepsSourceEnvironmentAcrossQuickAndGeneratedFollow() {
+        val environments = io.github.photowey.kttp.idea.env.KttpEnvironmentService.getInstance(project)
+        val prior = environments.selectedEnvironment
+        myFixture.addFileToProject(
+            "kttp.env.json",
+            """{"parity":{"baseUrl":"$baseUrl/source","TOKEN":"source-token"}}"""
+        )
+        val editor = editor()
+        val source = loadSource(
+            editor, """
+            val baseUrl: String by env
+            val TOKEN: String by env
+            GET(baseUrl) { header("X-Script", TOKEN) }
+        """.trimIndent()
+        )
+        val original = source.text
+        val conflicting = File(requireNotNull(project.basePath), ".kttp/requests/kttp.env.json")
+        val oldConflict = conflicting.takeIf { it.exists() }?.readBytes()
+        conflicting.parentFile.mkdirs()
+        conflicting.writeText("""{"parity":{"baseUrl":"$baseUrl/wrong","TOKEN":"wrong-token"}}""")
+        val service = project.getService(GuiDraftService::class.java)
+        val before = service.listDrafts().map { it.id }.toSet()
+        try {
+            environments.setSelectedEnvironment("parity")
+            button(editor, "Detach").doClick()
+            com.intellij.util.ui.UIUtil.dispatchAllInvocationEvents()
+            val quick = send(editor)
+            assertTrue(quick.message, quick.success)
+            assertEquals("$baseUrl/source", quick.requestUrl)
+            header(editor).executionModeCombo.selectedItem = RequestExecutionMode.FOLLOW_SCRIPT
+            val follow = send(editor)
+            assertTrue(follow.message, follow.success)
+            assertEquals("$baseUrl/source", follow.requestUrl)
+            descendants(editor).filterIsInstance<ParamsTabPanel>().single().setParamEntries(listOf("q" to "edited"))
+            val edited = send(editor)
+            assertTrue(edited.message, edited.success)
+            assertEquals("$baseUrl/source?q=edited", edited.requestUrl)
+            assertEquals(
+                listOf("/source" to "source-token", "/source" to "source-token", "/source" to "source-token"),
+                received.toList()
+            )
+            assertEquals(original, File(source.virtualFile.path).readText())
+        } finally {
+            environments.setSelectedEnvironment(prior)
+            service.listDrafts().filter { it.id !in before }.forEach {
+                it.bridge.generatedScriptPath?.let { path -> File(path).delete() }
+                service.deleteDraft(it.id)
+            }
+            if (oldConflict == null) conflicting.delete() else conflicting.writeBytes(oldConflict)
+        }
+    }
+
     private fun editor() = RequestEditorPanel(project) { result, path -> results.add(result to path) }
 
     private fun loadSource(editor: RequestEditorPanel, text: String, index: Int = 0): KtFile {

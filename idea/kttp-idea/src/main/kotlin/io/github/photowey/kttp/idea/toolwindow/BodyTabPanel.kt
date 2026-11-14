@@ -348,11 +348,10 @@ class BodyTabPanel : JPanel(BorderLayout()) {
 
     private fun refreshSummary() {
         val (_, content) = getBody()
-        summaryLabel.text = when {
-            content.trim().startsWith("\${env:") -> "Sources: env reference"
-            content.trim().startsWith("@file:") -> "Sources: local file reference"
-            content.isBlank() -> "Sources: none"
-            else -> "Sources: literal content"
+        summaryLabel.text = when (GuiValueRefCodec.parse(content, allowLocalFile = true)) {
+            is ValueRef.Env -> "Sources: env reference"
+            is ValueRef.LocalFile -> "Sources: local file reference"
+            else -> if (content.isBlank()) "Sources: none" else "Sources: literal content"
         }
     }
 }

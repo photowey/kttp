@@ -16,6 +16,7 @@
 
 package io.github.photowey.kttp.idea.toolwindow
 
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.ui.UIUtil
 import io.github.photowey.kttp.idea.gui.GuiMode
 import java.awt.Color
@@ -70,7 +71,10 @@ enum class FileProjectionFilter(val label: String, val description: String) {
         "Script required",
         "Show scripts whose requests all require Follow Script rather than Quick Request."
     ),
-    MIXED("Mixed capabilities", "Show scripts containing different projection categories, including complete and HTTP-only projections.");
+    MIXED(
+        "Mixed capabilities",
+        "Show scripts containing different projection categories, including complete and HTTP-only projections."
+    );
 
     override fun toString(): String = label
 }
@@ -150,6 +154,23 @@ object RequestProjectionPresentation {
                 summary.scriptOnlyCount
             ).count { it > 0 } > 1
         }
+    }
+
+    internal fun sortAndFilterFiles(
+        files: List<VirtualFile>, filter: FileProjectionFilter, summaryFor: (String) -> FileProjectionSummary?
+    ): List<VirtualFile> {
+        return files
+            .filter { file ->
+                val summary = summaryFor(file.path) ?: FileProjectionSummary()
+                matchesFilter(summary, filter)
+            }
+            .sortedWith(
+                compareBy<VirtualFile> { file ->
+                    sortWeight(summaryFor(file.path) ?: FileProjectionSummary())
+                }.thenBy { file ->
+                    file.name.lowercase()
+                }
+            )
     }
 
     fun sortWeight(summary: FileProjectionSummary): Int {

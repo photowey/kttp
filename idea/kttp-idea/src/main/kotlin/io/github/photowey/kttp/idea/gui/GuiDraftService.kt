@@ -104,6 +104,17 @@ class GuiDraftService(private val project: Project) {
         return persisted
     }
 
+    /** Persists an import batch in one archive replacement, preserving script-owned bridge modes. */
+    @Synchronized
+    fun saveImportedDrafts(imported: List<GuiDraft>): List<GuiDraft> {
+        require(imported.map { it.id }.distinct().size == imported.size) { "Duplicate imported draft IDs" }
+        val old = loadCache()
+        require(old.none { existing -> imported.any { it.id == existing.id } }) { "Import would replace an existing draft" }
+        val snapshots = imported.map { immutableDraft(it.copy(meta = it.meta.copy(dirty = false))) }
+        flush(snapshots + old)
+        return immutableList(snapshots)
+    }
+
     @Synchronized
     fun renameDraft(id: String, newTitle: String): GuiDraft? {
         val drafts = loadCache().toMutableList()

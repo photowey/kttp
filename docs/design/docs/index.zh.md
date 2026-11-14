@@ -35,7 +35,7 @@ Follow Script 保留脚本行为；Quick Request 跳过 JVM 启动和脚本编�
 
 - [快速开始](quick-start.md)：构建或安装插件，运行第一个请求。
 - [Kotlin 脚本](scripting.md)：请求构建、断言、环境配置和本地文件。
-- [GUI 请求](gui.md)：草稿、脚本关联、响应、历史记录和执行限制。
+- [GUI 请求](gui.md)：cURL/Postman 导入、草稿、脚本关联、响应、历史记录和执行限制。
 - [CLI 参考](cli.md)：在 IDE 之外编译、执行和选择请求。
 - [Agent Skill](agent-skills.md)：向编码 Agent 提供 Kttp 的实际语法和工作方式。
 - [架构](architecture.md)：DSL、CLI 与 IDEA 集成的职责边界。
@@ -43,9 +43,12 @@ Follow Script 保留脚本行为；Quick Request 跳过 JVM 启动和脚本编�
 
 ## 当前范围
 
-插件以 IntelliJ IDEA 2026.3 为构建目标，设置 `sinceBuild=263.0`。开发使用 JDK 25，
-脚本执行推荐使用 JDK 21 或 25。其他 IDE 产品和第三方主题尚未单独验证。
-HTTP 文件和 Postman 导入操作目前是占位功能。
+Kttp 1.2.0 以 IntelliJ IDEA 2026.3 为构建目标，兼容构建号 `263.0` 至 `263.*`。
+开发使用 JDK 25，脚本执行推荐使用 JDK 21 或 25。其他 IDE 产品和第三方主题尚未单独验证。
+
+检查预览后，可将 cURL 或 Postman Collection v2.0/v2.1 导入脚本或 GUI 草稿。
+Postman Environment 可选，也可单独导入。不支持的脚本、动态值和选项需要按诊断核对；导入不会发送请求。
+覆盖范围与限制见 [GUI 请求](gui.md#curl-postman)。HTTP 文件导入仍为占位功能。
 
 每次文档构建对应一个源代码版本。线上 Pages 站点跟随已发布的稳定 Release 部署；
 推送到 `main` 只检查文档，不更新线上站点。

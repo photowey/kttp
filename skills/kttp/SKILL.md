@@ -1,12 +1,12 @@
 ---
 name: kttp
-description: Use when writing, editing, explaining, or debugging Kttp .kttp.kts HTTP scripts, translating cURL or HTTP requests into Kttp, or choosing between Kttp script execution and GUI request modes.
+description: Use when writing, editing, explaining, or debugging Kttp .kttp.kts HTTP scripts, importing or translating cURL/Postman requests, or choosing between Kttp script execution and GUI request modes.
 ---
 
 # Kttp
 
 Create executable Kotlin HTTP scripts for Kttp's IntelliJ IDEA plugin or standalone CLI. Answer in the user's language.
-This skill describes Kttp 1.1.0's `.kttp.kts` API and IDEA 2026.3 integration. Check an existing project's runtime
+This skill describes Kttp 1.2.0's `.kttp.kts` API and IDEA 2026.3 integration. Check an existing project's runtime
 version before using version-specific behavior.
 
 ## Start with the request
@@ -37,6 +37,7 @@ OS-environment lookup.
 | Exact request builders, auth, callbacks, env/files, client configuration    | [syntax.md](references/syntax.md)       |
 | JSON, forms, uploads, login dependencies, Kotlin reuse, stored values       | [recipes.md](references/recipes.md)     |
 | IDEA/CLI setup, single-request selection, compile checks, GUI modes, errors | [execution.md](references/execution.md) |
+| cURL/Postman import, optional environments, variables and diagnostic limits | [importing.md](references/importing.md) |
 
 Read the login dependency recipe before building a request chain. Read the execution reference before supplying CLI
 flags or diagnosing a difference between GUI and script behavior. These references are included in the installed skill;
@@ -48,7 +49,7 @@ a source checkout is not required.
   interpolation, such as `"$baseUrl/users"`, in scripts.
 - Use `GET(url, name = "read-user") { ... }`; `name` is an argument of the request function, not a builder property.
 - Request calls register holders. Their builder blocks and HTTP calls normally run in the execution phase. Reading a
-  delegated request result can execute a prerequisite. Kttp 1.1.0 supports these properties directly; no compatibility
+  delegated request result can execute a prerequisite. Kttp 1.2.0 supports these properties directly; no compatibility
   `getValue` extension is needed. Use the login recipe; direct holder execution is internal.
 - `.then { ... }` receives `ThenContext`. Use `assertStatus`, `decode<T>`, `body`, or `getResponse()`. It is not an
   infix call and has no `assert { status(...) }` DSL.
@@ -60,8 +61,14 @@ a source checkout is not required.
   JSON or escape interpolated values.
 - Follow Script runs the script and its callbacks. Quick Request sends a GUI projection and skips script evaluation,
   global script configuration, and `then`. Use Follow Script when the script's behavior matters.
+- GUI environment fields use a complete `${name}` value, accepting legacy `${env:name}` as well. Use `\${name}`
+  for literal text. Mixed `${baseUrl}/path` input is not GUI interpolation; use Kotlin in the linked script.
+- **Import Requests…** previews cURL/Postman without executing commands or HTTP. Editor imports insert into the current
+  script by default; New Script creates a project-local file. GUI imports default to drafts. New Postman profiles use `postman_`; review activation and diagnostics before Import.
+- Postman Environment is optional. Keep missing variables explicit; do not invent values or translate pre-request/test
+  JavaScript as if it were Kotlin. Read [importing.md](references/importing.md) for scope and authentication limits.
 - cURL export skips the exported request's transport and response callbacks. Top-level Kotlin and prerequisite
-  requests may still run. Translating pasted cURL with this skill produces source; the plugin has no cURL import UI.
+  requests may still run.
 
 ## Produce and verify
 

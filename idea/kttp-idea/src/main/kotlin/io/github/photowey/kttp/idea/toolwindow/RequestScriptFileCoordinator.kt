@@ -26,6 +26,7 @@ import com.intellij.psi.PsiDocumentManager
 import io.github.photowey.kttp.idea.gui.GuiDraft
 import io.github.photowey.kttp.idea.gui.GuiScriptGenerator
 import io.github.photowey.kttp.idea.path.KttpConsolesPath
+import io.github.photowey.kttp.idea.path.KttpDocumentSaver
 import io.github.photowey.kttp.idea.path.KttpFileNavigation
 import io.github.photowey.kttp.idea.path.KttpProjectPath
 import java.io.File
@@ -69,7 +70,7 @@ internal class RequestScriptFileCoordinator(private val project: Project) {
                 }
                 document.insertString(document.textLength, separator + GuiScriptGenerator.render(draft, document.text))
                 PsiDocumentManager.getInstance(project).commitDocument(document)
-                FileDocumentManager.getInstance().saveDocument(document)
+                KttpDocumentSaver.save(document)
             }
         }
         return requireNotNull(LocalFileSystem.getInstance().refreshAndFindFileByIoFile(targetFile)) {
@@ -96,7 +97,7 @@ internal class RequestScriptFileCoordinator(private val project: Project) {
             ) { "Cannot open the script as a text document" }
             document.setText(GuiScriptGenerator.render(draft))
             PsiDocumentManager.getInstance(project).commitDocument(document)
-            FileDocumentManager.getInstance().saveDocument(document)
+            KttpDocumentSaver.save(document)
         }
         return virtualFile
     }

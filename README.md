@@ -22,7 +22,7 @@ See [Development and Releases](docs/design/docs/development.md) for CI, Pages se
 
 ## Build and install locally
 
-Kttp 1.1.0 targets IntelliJ IDEA **2026.3**, with `sinceBuild=263.0` and `untilBuild=263.*`, and requires the Kotlin plugin
+Kttp 1.2.0 targets IntelliJ IDEA **2026.3**, with `sinceBuild=263.0` and `untilBuild=263.*`, and requires the Kotlin plugin
 and the platform language/JSON modules declared in `plugin.xml`. Earlier IDEA versions need a compatible older plugin
 such as Kttp 1.0.1. Other IDE products have not been independently verified.
 Use JDK 25 for development. Script execution requires a configured project JDK; JDK 21 or 25 is recommended.
@@ -32,9 +32,11 @@ The first build needs network access for Gradle, dependencies, and the IntelliJ 
 Maven repository or home directory settings.
 
 Dependencies resolve through Maven Central and Gradle Plugin Portal, with IntelliJ Platform dependencies using the
-platform plugin's default repositories. No repository profile is required. Keep machine-specific Gradle settings in your
-own `~/.gradle/gradle.properties`. The development IDE uses the IntelliJ Platform plugin's sandbox under
-`idea/kttp-idea/build/idea-sandbox/`; it does not override the JVM's `user.home`.
+platform plugin's default repositories. No repository profile is required. Keep machine-specific Gradle settings in
+`gradle.properties` inside your Gradle user home (`~/.gradle` by default; IDEA can configure a different location).
+The development IDE uses `.intellijPlatform/sandbox/kttp-idea/IU-2026.3/`, with separate directories for `runIde`.
+Both development sandboxes and the installable ZIP include the CLI and script libraries. The build does not override
+the JVM's `user.home`.
 
 Import the repository root as a single Gradle project. The `core/` and `idea/` directories group the modules declared in
 the root `settings.gradle.kts`; they are not separate builds.
@@ -90,6 +92,45 @@ the request at the caret, falling back to the first request when necessary. Expo
 transport and response callbacks; top-level Kotlin and prerequisite requests can still run. See the
 [CLI reference](docs/design/docs/cli.md) for the execution boundaries.
 
+## Import cURL or Postman
+
+Open **+ → Import Requests…** in a script editor to insert requests into that script, or **Import Requests…** in the
+GUI **Sources** area to create saved drafts. Choose **cURL** or **Postman**, supply pasted text or a UTF-8 file, then
+click **Refresh Preview**. Review the selected requests, target, generated script and diagnostics before clicking
+**Import**. **Cancel** closes the dialog without changes; importing never sends a request.
+The resizable dialog keeps sources on the left and request selection/script preview on the right. Its footer groups
+**Destination** and **Environment** below the matching source/review columns. One divider keeps them aligned;
+full destination paths are available on hover.
+**Base directory** starts at the current project; file choosers also start there unless a source/base path
+is already set. After a GUI import, **Sources → Drafts** selects and reveals the first new request and shows the import count.
+
+Postman accepts Collection JSON v2.0/v2.1 with an optional Environment, or an Environment on its own. Collection
+variables supply defaults; enabled Environment values override matching keys. Import creates new, non-conflicting
+profiles in `kttp.env.json`, named `postman_<environment>` (or `postman_<collection>` for Collection defaults). Missing values remain explicit references. Nested
+static values are resolved, while unresolved or cyclic profile values are omitted with diagnostics.
+Oversized or excessively complex expansions are rejected before files are written.
+
+**Import into** preserves the entry default: **Current Script** in the editor and **GUI Drafts** in the sidebar.
+Choose **New Script** to create one grouped file under `<project>/.kttp/imports/`, with an editable directory and file name
+based on the Collection name. Name collisions receive numeric suffixes; existing files are not overwritten.
+The imported environment is written beside that script. Environment-only imports do not create empty scripts.
+Imported files and GUI-prepared scripts finish writing before import completion or CLI execution.
+Mixed Postman values generate ordinary Kotlin string templates and shared `String by env` declarations; compatible
+existing delegates are reused, while conflicting declarations require review.
+
+**Use imported environment** defaults on only when there is one created profile and no current selection.
+Otherwise the existing selection is retained unless you opt in; multiple profiles require a choice.
+The selection changes only after successful import, using the actual name such as `postman_dev-2`.
+cURL imports do not create empty environment profiles.
+
+Ordinary GUI imports become editable drafts with Quick Request and Generate Script. Custom methods, multipart/file
+bodies and mixed variable expressions that the composer cannot represent keep a linked script and use Follow Script.
+Generated environment URL bindings display as `${baseUrl}/path` without evaluating the script; edit the linked source
+to change them.
+cURL input uses a bounded POSIX syntax; unsupported options and shell expansion are rejected. Postman scripts are
+retained for review and are neither run nor translated into Kotlin. See the [import guide](docs/design/docs/gui.md#import-curl-or-postman)
+for supported fields, authentication and file handling.
+
 ## GUI execution modes
 
 Open **View → Tool Windows → Kttp**. **New Draft** starts with `https://httpbin.org/get`, a `source=kttp` query
@@ -105,7 +146,12 @@ New drafts default to Quick Request; imported script requests default to Follow 
 overrides the default. Quick Request is unavailable when the GUI cannot extract a direct HTTP request from the script.
 Use Follow Script in that case; the source must still compile and execute successfully.
 
-Imported requests are read-only in the composer. Edit their source script, or use **Detach** on a supported projection
+GUI fields use `${name}` for an entire environment value, for example `${API_TOKEN}` in an Auth field. Legacy
+`${env:name}` input remains accepted. Prefix a value with `\` to send it literally, such as `\${API_TOKEN}`.
+GUI input does not interpolate `${baseUrl}/path`; use the linked script for mixed expressions.
+Drafts detached from scripts keep the source environment lookup location when switching GUI execution modes.
+
+Requests loaded from scripts are read-only in the composer. Edit their source script, or use **Detach** on a supported projection
 to create an editable draft. Changing the execution mode does not make an imported request editable.
 
 Follow Script evaluates the source file, including top-level Kotlin code, and may execute delegated request dependencies.
@@ -201,7 +247,7 @@ in `core/kttp-cli/build/libs/`; the `-plain.jar` artifact does not bundle its de
 
 - Quick Request sends only the HTTP data represented by the GUI; use Follow Script for Kotlin script behavior.
 - Quick Request uses a 60-second call timeout and does not maintain a persistent cookie jar.
-- HTTP-file and Postman import actions are placeholders; cURL import is not implemented.
+- HTTP-file import remains a placeholder. cURL/Postman import covers static request data; review diagnostics for unsupported options, authentication flows, dynamic variables and JavaScript.
 - `http2()` / the HTTP/2 checkbox selects OkHttp's `H2_PRIOR_KNOWLEDGE` mode; it is not an automatic HTTP/2 negotiation
   switch.
 - Compatibility with every IDE product or third-party theme has not been independently verified.

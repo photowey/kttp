@@ -6,9 +6,13 @@
 
     <description
     ><![CDATA[
-        Kotlin DSL HTTP Client for IntelliJ IDEA.<br>
-        Core: <b>.kttp.kts</b> files as Kotlin Script under <b>Scratches and Consoles → Kttp</b>.
-        Write GET/POST/... requests as Kotlin DSL, run them in the IDE.
+        <p>HTTP client for IntelliJ IDEA with Kotlin scripts and a GUI request composer.</p>
+        <p>Write requests in <b>.kttp.kts</b> files in your project or under
+        <b>Scratches and Consoles → Consoles → Kttp</b>. Run scripts with their Kotlin context,
+        or send supported requests directly from the Kttp tool window. Inspect responses, assertions and history.</p>
+        <p>Import supported cURL requests or Postman Collections, with an optional Environment.
+        Preview the generated script and diagnostics before saving requests to a script or GUI drafts.
+        Postman JavaScript is retained for review; it is not executed or translated.</p>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
@@ -230,6 +234,13 @@
                 text="Custom request"
                 description="Insert custom HTTP method"
         />
+        <action
+                id="kttp.importRequests"
+                class="io.github.photowey.kttp.idea.actions.ImportRequestsAction"
+                text="Import Requests…"
+                description="Import cURL or Postman requests into the current Kttp script"
+                icon="AllIcons.Actions.Download"
+        />
         <group
                 id="kttp.addRequest.group"
                 text="Add Request"
@@ -251,6 +262,8 @@
             <reference ref="kttp.options.request"/>
             <separator/>
             <reference ref="kttp.custom.request"/>
+            <separator/>
+            <reference ref="kttp.importRequests"/>
         </group>
         <group id="kttp.generate.group">
             <add-to-group group-id="GenerateGroup" anchor="last"/>

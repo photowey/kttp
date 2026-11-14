@@ -3,17 +3,24 @@
 ## Local development
 
 Import the repository root as a Gradle project and use JDK 25. The Gradle Wrapper pins Gradle 9.7.0 and checks the
-official distribution's SHA-256. Keep machine-specific settings in your own `~/.gradle/gradle.properties`.
+official distribution's SHA-256. Keep machine-specific settings in `gradle.properties` inside your Gradle user home
+(`~/.gradle` by default). If IDEA configures another Gradle user home, its builds read settings from that location.
 
 ```bash
 ./gradlew test
 ./gradlew :idea:kttp-idea:buildPlugin
 ./gradlew :core:kttp-cli:shadowJar
+./gradlew :idea:kttp-idea:verifyKttpSandboxes
 ./gradlew :idea:kttp-idea:runIde
 ```
 
 `runIde` starts a development IDEA with the plugin installed. Its sandbox is under
-`idea/kttp-idea/build/idea-sandbox/`. The build targets IDEA 2026.3, `sinceBuild=263.0`. Core JVM bytecode targets
+`.intellijPlatform/sandbox/kttp-idea/IU-2026.3/`. `runIde` uses `config_runIde`, `plugins_runIde`, `system_runIde`
+and `log_runIde`; the installable ZIP uses the default `prepareSandbox` output. Each sandbox preparation copies
+the CLI and script libraries into its own plugin directory. `verifyKttpSandboxes` prepares both destinations,
+compares their files byte for byte and checks that the bundled CLI matches `shadowJar`.
+
+The build targets IDEA 2026.3, `sinceBuild=263.0`. Core JVM bytecode targets
 and the plugin's Java 25 bytecode target are configured separately. Compatibility with every IDE product and third-party theme
 has not been verified.
 
@@ -42,7 +49,8 @@ The site uses Kotlin-inspired purple, pink and orange in light and dark themes.
 ## GitHub workflows
 
 - **CI** runs for `main`, pull requests and manual dispatch, and is reusable by releases. It tests the Gradle modules,
-  builds the plugin ZIP and CLI fat JAR, validates distribution contents and builds the documentation strictly.
+  verifies the development and package sandbox payloads, builds the plugin ZIP and CLI fat JAR, validates distribution
+  contents and builds the documentation strictly.
 - A pushed **stable `vX.Y.Z` tag** starts release validation. Its version must match Gradle's `project.version` with
   the existing `-SNAPSHOT` suffix removed, following the build's artifact naming rule. Leading zeroes and prerelease
   suffixes are not accepted. For example, `1.0.0-SNAPSHOT` produces artifacts for tag `v1.0.0`.

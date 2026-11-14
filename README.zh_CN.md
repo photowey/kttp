@@ -21,7 +21,7 @@ CI、Pages 设置和发布清单见[开发与发布](docs/design/docs/developmen
 
 ## 本地构建与安装
 
-Kttp 1.1.0 以 IntelliJ IDEA **2026.3** 为构建目标，设置 `sinceBuild=263.0` 和 `untilBuild=263.*`，
+Kttp 1.2.0 以 IntelliJ IDEA **2026.3** 为构建目标，设置 `sinceBuild=263.0` 和 `untilBuild=263.*`，
 依赖 Kotlin 插件及 `plugin.xml` 中声明的平台语言和 JSON 模块。较早的 IDEA 需要使用 Kttp 1.0.1 等兼容旧版。
 其他 IDE 产品尚未单独验证。
 开发使用 JDK 25；执行脚本需要配置项目 JDK，推荐使用 JDK 21 或 25。
@@ -30,8 +30,10 @@ Gradle Wrapper 从官方 HTTPS 地址下载 Gradle 9.7.0，并校验 SHA-256。
 首次构建需要联网下载 Gradle、依赖和 IntelliJ Platform，不需要配置开发者个人的 Maven 仓库或主目录。
 
 依赖通过 Maven Central 和 Gradle Plugin Portal 解析；IntelliJ Platform 依赖使用平台插件的默认仓库。
-无需额外指定仓库 Profile。本机 Gradle 设置请放在个人的 `~/.gradle/gradle.properties` 中。
-开发测试实例使用 IntelliJ Platform 插件管理的 `idea/kttp-idea/build/idea-sandbox/` 沙箱，
+无需额外指定仓库 Profile。本机设置请放在 Gradle user home 下的 `gradle.properties` 中；
+默认位置为 `~/.gradle`，IDEA 可另行配置。开发测试实例使用
+`.intellijPlatform/sandbox/kttp-idea/IU-2026.3/` 沙箱，`runIde` 使用其中的独立目录。
+开发沙箱和正式 ZIP 均包含 CLI 和脚本依赖，
 不会重设 JVM 的 `user.home`。
 
 请将仓库根目录作为一个 Gradle 工程导入。`core/` 和 `idea/` 只是根 `settings.gradle.kts`
@@ -87,6 +89,38 @@ Kttp 的 **Response** 标签页显示最近一次 GUI Send 的结果。
 **Copy as cURL** 导出光标所在请求，无法定位时回退到第一个请求。导出会跳过所选请求的 HTTP 发送和响应回调，
 但顶层 Kotlin 和前置依赖请求仍可能执行。执行边界见 [CLI 参考](docs/design/docs/cli.zh.md)。
 
+## 导入 cURL 或 Postman
+
+在脚本编辑器中选择 **+ → Import Requests…**，将请求插入当前脚本；或在 GUI **Sources** 区域点击
+**Import Requests…**，创建已保存的草稿。选择 **cURL** 或 **Postman**，粘贴文本或选择 UTF-8 文件，
+点击 **Refresh Preview**。检查所选请求、目标位置、生成的脚本和诊断，再点击 **Import**。
+**Cancel** 关闭窗口且不修改内容；导入不会发送请求。
+弹窗支持拖动调整左右栏宽度，以及右侧请求列表和脚本预览的高度；底部的 **Destination** 和 **Environment** 分别与上方来源、审查区域共用分栏，拖动时保持对齐，悬停可查看完整目标路径。
+**Base directory** 默认使用当前工程；文件选择器也从工程目录打开，已设置来源文件或基础目录时优先使用该位置。
+GUI 导入完成后，**Sources → Drafts** 会选中并定位到第一条新请求，同时显示本次导入数量。
+
+Postman 支持 Collection JSON v2.0/v2.1，可附带 Environment，也可单独导入 Environment。
+Collection 变量提供默认值，Environment 中启用的同名值覆盖默认值。导入会在 `kttp.env.json` 中创建不重名的配置，
+配置名称为 `postman_<环境名>`，仅 Collection 默认值则使用 `postman_<集合名>`。缺失值保留为明确的引用；嵌套静态值会解析，无法解析或循环引用的配置值会省略并给出诊断。
+展开结果过大或替换次数超限时，会在写入文件前拒绝导入。
+
+**Import into** 沿用入口默认值：编辑器为 **Current Script**，侧栏为 **GUI Drafts**。
+选择 **New Script** 可在 `<工程>/.kttp/imports/` 下创建一个保留请求分组和顺序的脚本；目录和基于 Collection 名称的文件名可修改。
+同名时添加数字后缀，不覆盖已有文件；环境文件写在新脚本旁边。仅导入 Environment 时不创建空脚本。
+导入文件和 GUI 准备的脚本会在导入完成或 CLI 执行前写入磁盘。
+混合变量值生成普通 Kotlin 字符串模板和共享的 `String by env` 声明；复用兼容声明，同名冲突需先处理。
+
+**Use imported environment** 仅在尚未选环境且只创建一个配置时默认勾选。
+否则保留已有选择，需主动启用；多个配置需明确选择。只有导入成功后才切换，使用 `postman_dev-2` 等实际创建的名称。
+cURL 导入不会创建空环境配置。
+
+通过 GUI 导入的普通请求成为可编辑草稿，支持 Quick Request 和 Generate Script。
+自定义方法、multipart/文件正文以及编辑器无法表示的混合变量表达式保留关联脚本，使用 Follow Script。
+生成的环境变量 URL 绑定显示为 `${baseUrl}/path`，不会为显示地址而执行脚本；修改时需编辑关联源文件。
+cURL 输入采用有限的 POSIX 语法，不支持的选项和 shell 展开会被拒绝。
+Postman 脚本保留供核对，不会执行或自动翻译成 Kotlin。
+支持的字段、认证和文件处理方式见[导入指南](docs/design/docs/gui.zh.md)。
+
 ## GUI 执行模式
 
 打开 **View → Tool Windows → Kttp**，点击 **New Draft** 创建草稿。默认示例使用 `https://httpbin.org/get`，
@@ -100,6 +134,10 @@ Kttp 的 **Response** 标签页显示最近一次 GUI Send 的结果。
 新草稿默认使用 Quick Request，从脚本导入的请求默认使用 Follow Script；已保存的单请求执行模式会覆盖默认值。
 如果 GUI 无法从脚本中静态提取可直接发送的 HTTP 请求，Quick Request 将不可用。
 此时应使用 Follow Script，源脚本仍须能够成功编译和执行。
+
+GUI 字段用 `${name}` 引用整个环境值，例如在 Auth 字段中输入 `${API_TOKEN}`，仍兼容旧的 `${env:name}`。
+在值前加 `\` 可原样发送文本，例如 `\${API_TOKEN}`。GUI 输入不支持 `${baseUrl}/path` 这类拼接表达式，需在关联脚本中编辑。
+从脚本分离出的草稿在切换 GUI 执行模式时保留原脚本的环境文件查找位置。
 
 从脚本导入的请求在 GUI 请求编辑器中是只读的。你可以直接修改源脚本，或对支持提取的请求点击
 **Detach**，创建可编辑草稿。切换执行模式不会让导入的请求变为可编辑。
@@ -192,7 +230,7 @@ npx skills add . --skill kttp
 
 - Quick Request 只发送 GUI 能够表示的 HTTP 数据，需要 Kotlin 脚本行为时请使用 Follow Script。
 - Quick Request 的整体调用超时为 60 秒，不维护持久化 Cookie 存储。
-- HTTP 文件和 Postman 导入操作目前是占位功能；cURL 导入尚未实现。
+- HTTP 文件导入仍为占位功能。cURL/Postman 导入覆盖静态请求数据；不支持的选项、认证流程、动态变量和 JavaScript 需要按诊断处理。
 - `http2()` / **HTTP/2** 复选框选择的是 OkHttp 的 `H2_PRIOR_KNOWLEDGE` 模式，并非自动协商 HTTP/2 的开关。
 - 尚未逐一验证所有 IDE 产品和第三方主题的兼容性。
 

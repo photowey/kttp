@@ -16,38 +16,14 @@
 
 package io.github.photowey.kttp.idea.imports
 
-import com.intellij.openapi.actionSystem.ActionUpdateThread
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.ui.Messages
-import io.github.photowey.kttp.idea.icons.KttpIcons
+import io.github.photowey.kttp.idea.actions.ImportRequestsAction
+import io.github.photowey.kttp.idea.importing.ImportFormat
 
 /**
- * Placeholder: Import Postman collection as .kttp.kts.
- * Full implementation would parse Postman collection and generate Kttp DSL.
+ * Preserves the historical Postman action ID by opening the shared Postman import review.
  *
  * @author photowey
- * @version 1.0.0
- * @since 2026/02/16
+ * @version 1.2.0
+ * @since 2026/11/13
  */
-class ImportPostmanCollectionAction : AnAction(
-    "Import Postman Collection",
-    "Convert Postman collection to Kttp script (placeholder)",
-    KttpIcons.File
-) {
-
-    override fun actionPerformed(e: AnActionEvent) {
-        Messages.showInfoMessage(
-            e.project,
-            "Import from Postman collection is not yet implemented.\n\n" +
-                "Workaround: Create a new Kttp Script and paste your requests manually.",
-            "Import Postman Collection - Not Implemented"
-        )
-    }
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabledAndVisible = false
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
-}
+class ImportPostmanCollectionAction : ImportRequestsAction(ImportFormat.POSTMAN)

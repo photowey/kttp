@@ -17,6 +17,7 @@
 package io.github.photowey.kttp.idea.toolwindow
 
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.project.Project
 import io.github.photowey.kttp.core.enums.HttpMethod
 import io.github.photowey.kttp.idea.gui.*
 
@@ -28,6 +29,7 @@ import io.github.photowey.kttp.idea.gui.*
  * @since 2026/11/05
  */
 internal class RequestEditorFormMapper(
+    private val project: Project,
     private val header: ComposerHeaderPanel,
     private val params: ParamsTabPanel,
     private val headers: HeadersTabPanel,
@@ -42,7 +44,10 @@ internal class RequestEditorFormMapper(
         header.methodComboBox.model.selectedItem =
             if (draft.bridge.mode == GuiMode.SCRIPT_ONLY && draft.bridge.gaps.any { it.location == "method" })
                 "Script" else spec.method.value
-        header.urlField.text = GuiValueRefCodec.toDisplayValue(spec.target.url)
+        header.urlField.text = ScriptUrlPresentation.display(project, spec.target.url)
+        header.urlField.toolTipText = (spec.target.url as? ValueRef.OpaqueScript)?.let {
+            "URL is computed by the source script. Open Script to edit."
+        }
         params.setParamEntries(spec.target.queryParams.map { it.name to GuiValueRefCodec.toDisplayValue(it.value) })
         headers.setHeaderEntries(spec.headers.map { it.name to GuiValueRefCodec.toDisplayValue(it.value) })
         body.setBodySpec(spec.body)

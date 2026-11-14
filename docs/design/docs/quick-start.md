@@ -3,7 +3,7 @@
 ## Install the IDEA plugin
 
 Use JDK 25 for development. The plugin targets IntelliJ IDEA 2026.3 and depends on the Kotlin plugin and the platform
-language/JSON modules declared in `plugin.xml`. Kttp 1.1.0 declares builds `263.0` through `263.*`; use a compatible
+language/JSON modules declared in `plugin.xml`. Kttp 1.2.0 declares builds `263.0` through `263.*`; use a compatible
 older plugin such as Kttp 1.0.1 for earlier IDE versions.
 
 When a [GitHub Release](https://github.com/photowey/kttp/releases) is available, download its
@@ -55,6 +55,22 @@ Switch to **Follow Script** to run in script context. Requests selected from an 
 and are read-only in the composer. To edit one, change the source script or use **Detach**.
 
 See [GUI requests](gui.md) for the behavior of each button and the differences between the two modes.
+
+## Import an existing request
+
+Use the script editor's **+ → Import Requests…** to insert into the current script, or the GUI **Sources** area's
+**Import Requests…** to create saved drafts. Choose **cURL**, paste a command, and click **Refresh Preview**:
+
+```bash
+curl 'http://127.0.0.1:8080/health' -H 'Accept: application/json'
+```
+
+Review the target, generated script and diagnostics, then click **Import**. This does not contact the endpoint.
+**Cancel** leaves the destination unchanged. To use Postman instead, select **Postman** and supply a Collection v2.0/v2.1,
+an optional Environment, or only an Environment. Review the created environment profiles and activation choice in the import dialog.
+
+Ordinary GUI imports are editable drafts; requests needing script features use a linked script with **Follow Script**.
+See [import coverage and limits](gui.md#import-curl-or-postman) before sending a converted request.
 
 ## Use the standalone CLI
 

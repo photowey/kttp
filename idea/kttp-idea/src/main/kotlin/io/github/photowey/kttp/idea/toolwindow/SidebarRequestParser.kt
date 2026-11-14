@@ -24,6 +24,8 @@ import com.intellij.psi.PsiManager
 import io.github.photowey.kttp.idea.gui.GuiBridgeFormatter
 import io.github.photowey.kttp.idea.gui.GuiMode
 import io.github.photowey.kttp.idea.gui.RequestProjectionExtractor
+import io.github.photowey.kttp.idea.gui.ProjectionSyntax
+import io.github.photowey.kttp.idea.gui.ScriptUrlPresentation
 import io.github.photowey.kttp.idea.script.KttpRequestDeclaration
 import io.github.photowey.kttp.idea.script.toKttpScript
 import org.jetbrains.kotlin.psi.KtFile
@@ -67,10 +69,13 @@ internal class SidebarRequestParser(private val project: Project) {
                 sourceFilePath = sourceFilePath
             )
             val explanation = RequestProjectionPresentation.badge(projection.mode).tooltip
+            val url = projection.spec?.target?.url ?: decl.element?.let {
+                ProjectionSyntax.extractRequestSignature(it, decl).urlRef
+            }
             SidebarRequestDisplayInfo(
                 declaration = decl,
                 method = decl.getHttpMethod() ?: "GET",
-                url = decl.getUrl() ?: "",
+                url = url?.let { ScriptUrlPresentation.display(project, it) }.orEmpty(),
                 mode = projection.mode,
                 tooltip = if (projection.gaps.isEmpty()) explanation else
                     "$explanation\n\n${GuiBridgeFormatter.formatGaps(projection.gaps, "")}"

@@ -4,11 +4,13 @@
 包括脚本执行与 Quick Request 的区别。
 安装 Skill 不会安装 IDEA 插件、CLI 或 JDK。
 
-这些说明对应 Kttp 1.1.0：IDEA 2026.3（构建号 `263.0` 至 `263.*`），开发使用 JDK 25，
-脚本执行推荐使用 JDK 21 或 25。内容包含原生请求结果委托、cURL 导出边界和自定义方法的 Follow Script 执行。
+这些说明对应 Kttp 1.2.0：IDEA 2026.3（构建号 `263.0` 至 `263.*`），开发使用 JDK 25，
+脚本执行推荐使用 JDK 21 或 25。内容包含 cURL/Postman 导入、原生请求结果委托、cURL 导出边界和自定义方法的 Follow Script 执行。
 使用旧运行时时，应先核对其 API，再采用与版本相关的说明。
 
-Agent 可以根据该 Skill 将粘贴的 cURL 转换为 Kotlin 源码；1.1.0 插件没有 cURL 导入界面。
+插件在脚本编辑器 **+** 菜单和 GUI **Sources** 区域提供 **Import Requests…**。
+Skill 说明预览/选择、Postman 变量与可选环境，以及静态转换的限制，不承诺迁移 JavaScript 断言或授权流程。
+详见[导入指南](gui.md#curl-postman)。
 
 ## 从 GitHub 安装
 
@@ -47,6 +49,7 @@ GitHub 命令读取已发布版本。
 | `skills/kttp/references/syntax.md` | 请求构建器、响应、环境结构、文件和客户端设置 |
 | `skills/kttp/references/recipes.md` | JSON、表单、multipart、委托登录和 Kotlin 复用 |
 | `skills/kttp/references/execution.md` | IDEA/CLI 执行、GUI 模式和故障排查 |
+| `skills/kttp/references/importing.md` | cURL/Postman 导入、变量、环境、诊断和转换边界 |
 
 安装 Skill 时会一起包含这些参考文件。在源代码仓库中，这些路径相对于仓库根目录。
 线上文档还提供 [Kotlin 脚本介绍](scripting.md)和 [CLI 参考](cli.md)。
@@ -55,6 +58,7 @@ GitHub 命令读取已发布版本。
 
 - “写一个 Kttp POST 请求，使用 JSON 正文并检查状态码和返回 id。”
 - “把这条 cURL 命令转换为 `.kttp.kts`，并使用现有环境配置。”
+- “检查这个 Postman 导入，明确保留缺失环境键，并列出需要人工转换的脚本。”
 - “解释这个脚本为什么可以 Follow Script，但不能使用 Quick Request。”
 - “不发送 HTTP 请求地编译这个脚本，并说明实际验证了什么。”
 

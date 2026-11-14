@@ -33,9 +33,9 @@ object GuiScriptGenerator {
      * Renders the request and required value declarations without writing files or executing Kotlin.
      * Existing script text is used to reuse compatible environment declarations and avoid property-name conflicts.
      */
-    fun render(draft: GuiDraft, existingScript: String? = null): String {
+    fun render(draft: GuiDraft, existingScript: String? = null, environmentKeys: Set<String> = emptySet()): String {
         val spec = draft.request
-        val bindings = ValueBindings(spec, existingScript.orEmpty())
+        val bindings = ValueBindings(spec, existingScript.orEmpty(), environmentKeys)
         fun renderValue(value: ValueRef): String = bindings.render(value)
         val builder = StringBuilder()
         val method = spec.method.value
@@ -143,7 +143,7 @@ object GuiScriptGenerator {
      * @version 1.0.0
      * @since 2026/11/05
      */
-    private class ValueBindings(spec: RequestSpec, existingScript: String) {
+    private class ValueBindings(spec: RequestSpec, existingScript: String, environmentKeys: Set<String>) {
         val declarations = StringBuilder()
         private val fileNames = linkedMapOf<ValueRef.LocalFile, String>()
 
@@ -151,6 +151,7 @@ object GuiScriptGenerator {
             val existingProperties = existingProperties(existingScript)
             val usedNames = existingProperties.keys.toMutableSet()
             val values = buildList {
+                addAll(environmentKeys.map { ValueRef.Env(it) })
                 add(spec.target.url)
                 addAll(spec.target.pathParams.map { it.value })
                 addAll(spec.target.queryParams.map { it.value })

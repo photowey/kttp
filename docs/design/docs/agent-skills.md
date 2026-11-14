@@ -4,11 +4,13 @@ The `kttp` Agent Skill provides syntax and execution guidance for writing, expla
 scripts, including the differences between script execution and Quick Request.
 The skill does not install the IDEA plugin, CLI or JDK.
 
-These instructions describe Kttp 1.1.0: IDEA 2026.3 (builds `263.0` through `263.*`), JDK 25 for development, and
-JDK 21 or 25 for scripts. They cover native delegated request results, cURL export boundaries and custom methods in
-Follow Script. When using an older runtime, check its API before applying version-specific guidance.
+These instructions describe Kttp 1.2.0: IDEA 2026.3 (builds `263.0` through `263.*`), JDK 25 for development, and
+JDK 21 or 25 for scripts. They cover cURL/Postman import, native delegated request results, cURL export boundaries
+and custom methods in Follow Script. When using an older runtime, check its API before applying version-specific guidance.
 
-An agent can translate pasted cURL into Kotlin source using this skill. The plugin has no cURL import UI in 1.1.0.
+The plugin provides **Import Requests…** in the script editor's **+** menu and GUI **Sources** area. The skill explains
+preview/selection, Postman variables and optional environments, and the limits of static conversion. It does not claim
+to migrate JavaScript assertions or authorization flows. See the [import guide](gui.md#import-curl-or-postman).
 
 ## Install from GitHub
 
@@ -47,6 +49,7 @@ publishing; the GitHub form reads the published revision.
 | `skills/kttp/references/syntax.md` | Request builders, responses, environment schemas, files and client configuration |
 | `skills/kttp/references/recipes.md` | JSON, forms, multipart, delegated login and Kotlin reuse |
 | `skills/kttp/references/execution.md` | IDEA/CLI execution, GUI modes and debugging |
+| `skills/kttp/references/importing.md` | cURL/Postman import, variables, environments, diagnostics and conversion limits |
 
 The references are included in the skill installation. In a source checkout, these paths are relative to the
 repository root. See [Kotlin scripting](scripting.md) and the [CLI reference](cli.md) for the online introduction.
@@ -55,6 +58,7 @@ repository root. See [Kotlin scripting](scripting.md) and the [CLI reference](cl
 
 - “Write a Kttp POST request with a JSON body and check the status and returned id.”
 - “Convert this cURL command to a `.kttp.kts` script using my existing environment profile.”
+- “Review this Postman import, keep missing environment keys explicit and list scripts needing manual conversion.”
 - “Explain why this script works in Follow Script but cannot use Quick Request.”
 - “Compile this script without sending its HTTP requests, and report what was actually verified.”
 

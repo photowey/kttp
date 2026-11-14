@@ -30,6 +30,8 @@ class GuiValueRefRoundTripTest {
 
     @Test
     fun literalEnvironmentPlaceholderRetainsLiteralType() {
+        assertLiteralRoundTrip("\${TOKEN}")
+        assertLiteralRoundTrip("  \${TOKEN}  ")
         assertLiteralRoundTrip("\${env:TOKEN}")
         assertLiteralRoundTrip("  \${env:TOKEN}  ")
     }

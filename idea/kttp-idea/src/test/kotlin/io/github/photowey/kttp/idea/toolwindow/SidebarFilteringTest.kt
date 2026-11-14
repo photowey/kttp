@@ -71,6 +71,17 @@ class SidebarFilteringTest : BasePlatformTestCase() {
         }
     }
 
+    fun testGeneratedEnvironmentUrlIsReadableInSidebar() {
+        val file = myFixture.addFileToProject(
+            "imported-env.kttp.kts",
+            "GET((run { val `baseUrl`: String by env; `baseUrl` } + \"/echo?source=postman\"))"
+        ).virtualFile
+        val request = SidebarRequestParser(project).read(file).single()
+        assertEquals("\${baseUrl}/echo?source=postman", request.url)
+        assertEquals(GuiMode.SCRIPT_ONLY, request.mode)
+        assertTrue(request.tooltip.contains("Follow Script"))
+    }
+
     fun testEveryCapabilityFilterChangesScriptFilesAndKeepsDraftsAndRequestOrder() {
         addScripts()
         val service = project.getService(GuiDraftService::class.java)

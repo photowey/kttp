@@ -19,6 +19,8 @@ package io.github.photowey.kttp.idea.toolwindow
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import io.github.photowey.kttp.idea.gui.GuiValueRefCodec
+import io.github.photowey.kttp.idea.gui.ValueRef
 import java.awt.BorderLayout
 import java.awt.event.ActionEvent
 import java.awt.event.KeyAdapter
@@ -165,7 +167,7 @@ class ParamsTabPanel : JPanel(BorderLayout()) {
     }
 
     private fun refreshSummary() {
-        val envCount = getParamEntries().count { it.second.trim().startsWith("\${env:") }
+        val envCount = getParamEntries().count { GuiValueRefCodec.parse(it.second) is ValueRef.Env }
         summaryLabel.text = if (envCount == 0) "Sources: literal values" else "Sources: $envCount env reference(s)"
     }
 }

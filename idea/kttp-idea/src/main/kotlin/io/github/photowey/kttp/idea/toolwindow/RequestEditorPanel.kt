@@ -67,9 +67,11 @@ class RequestEditorPanel(
     private val headersTabPanel = HeadersTabPanel()
     private val bodyTabPanel = BodyTabPanel()
     private val authTabPanel = AuthTabPanel()
-    private val form = RequestEditorFormMapper(headerPanel, paramsTabPanel, headersTabPanel, bodyTabPanel, authTabPanel)
+    private val form =
+        RequestEditorFormMapper(project, headerPanel, paramsTabPanel, headersTabPanel, bodyTabPanel, authTabPanel)
     private val scripts = RequestScriptFileCoordinator(project)
     private val projections = RequestEditorProjectionLoader(project)
+    private val persistedSources = PersistedDraftSourceResolver(project)
     private val session = EditorWorkingSession(draftService.createNewDraft())
     private var isLoadingRequest = false
     private var activeCancellation: GuiRequestCancellation? = null
@@ -117,15 +119,8 @@ class RequestEditorPanel(
     fun loadDraft(draft: GuiDraft) {
         if (draft.id == session.draft.id && !form.commitPendingEdits()) return
         bind {
-            session.loadPersisted(
-                draft.copy(
-                    executionMode = executionPreferences.modeFor(
-                        draft.id,
-                        draft.executionMode
-                    )
-                )
-            )
-            sourceDeclaration = null
+            session.loadPersisted(executionPreferences.applyTo(draft))
+            sourceDeclaration = persistedSources.restore(session)
             form.fill(session.draft)
         }
         bridgePanel.focusForMode(session.draft.bridge.mode)
@@ -143,14 +138,7 @@ class RequestEditorPanel(
         try {
             val imported = projections.load(declaration, sourceFile, declarationIndex)
             bind {
-                session.loadImported(
-                    imported.copy(
-                        executionMode = executionPreferences.modeFor(
-                            imported.id,
-                            imported.executionMode
-                        )
-                    ), sourceFile, declarationIndex
-                )
+                session.loadImported(executionPreferences.applyTo(imported), sourceFile, declarationIndex)
                 sourceDeclaration = declaration
                 form.fill(session.draft)
             }
@@ -332,7 +320,10 @@ class RequestEditorPanel(
     private fun executionBlockReason(): String? {
         val draft = session.draft
         if (draft.executionMode == RequestExecutionMode.FOLLOW_SCRIPT && draft.ownership == DraftOwnership.SCRIPT_IMPORTED) {
-            return if (currentSourceFile?.isValid != true || sourceDeclaration?.element == null)
+            val available = ApplicationManager.getApplication().runReadAction(Computable {
+                currentSourceFile?.isValid == true && sourceDeclaration?.element != null
+            })
+            return if (!available)
                 "The source request is unavailable. Select it again before sending." else null
         }
         if (draft.executionMode == RequestExecutionMode.QUICK_REQUEST && draft.bridge.mode == GuiMode.SCRIPT_ONLY)
@@ -412,10 +403,13 @@ class RequestEditorPanel(
 
     private fun prepareScript(): PreparedScriptRequest? {
         if (session.draft.executionMode != RequestExecutionMode.FOLLOW_SCRIPT) return null
-        return scriptPreparation.prepare(snapshot(), currentSourceFile, sourceDeclaration).also { ready ->
+        val ready = scriptPreparation.prepare(snapshot(), currentSourceFile, sourceDeclaration)
+            .withPersistedIdentity(session.draft)
+        return ready.also {
             bind {
                 session.accept(ready.draft)
-                if (ready.draft.ownership == DraftOwnership.SCRIPT_IMPORTED) currentDeclarationIndex = ready.declarationIndex
+                if (ready.draft.ownership == DraftOwnership.SCRIPT_IMPORTED) currentDeclarationIndex =
+                    ready.declarationIndex
                 form.fill(session.draft)
             }
             if (ready.draft.ownership != DraftOwnership.SCRIPT_IMPORTED) {
@@ -426,12 +420,15 @@ class RequestEditorPanel(
     }
 
     private fun launchDraftRequest(started: Long, cancellation: GuiRequestCancellation) {
+        val environmentSource = currentSourceFile ?: (session.draft.bridge.sourceScriptPath ?: session.linkedScriptPath)
+            ?.let { LocalFileSystem.getInstance().findFileByPath(it) }
         val prepared = prepareScript()
         val draft = snapshot()
         val revision = session.revision
         val linkedPath = prepared?.file?.path ?: session.linkedScriptPath
         val environmentFile =
-            prepared?.file ?: currentSourceFile ?: linkedPath?.let { LocalFileSystem.getInstance().findFileByPath(it) }
+            if (draft.ownership == DraftOwnership.SCRIPT_IMPORTED) prepared?.file
+                ?: environmentSource else environmentSource
         val environment = KttpEnvironmentService.getInstance(project).getEnvironmentVariables(environmentFile)
         val baseDir = project.basePath ?: environmentFile?.parent?.path
         val responseDir = if (prepared != null) KttpConsolesPath.getResponsesDir()
@@ -450,7 +447,12 @@ class RequestEditorPanel(
             val preview: (KttpExecutionResult) -> Unit = { response ->
                 ApplicationManager.getApplication().invokeLater {
                     if (!disposed && !project.isDisposed && activeCancellation === cancellation && !cancellation.isCancelled) {
-                        onResponsePreview?.invoke(response.copy(scriptName = draft.title, executionMode = draft.executionMode))
+                        onResponsePreview?.invoke(
+                            response.copy(
+                                scriptName = draft.title,
+                                executionMode = draft.executionMode
+                            )
+                        )
                     }
                 }
             }
